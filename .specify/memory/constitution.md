@@ -1,50 +1,85 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# GitXab.vim Constitution
+
+<!--
+Sync Impact Report:
+Version change: 1.0.0 (Initial version)
+Modified principles:
+- Added: I. Documentation Management
+- Added: II. Change History
+- Added: III. Test-Driven Development
+- Added: IV. Docker-First Development
+- Added: V. Issue-Based Management
+
+Templates requiring updates:
+⚠ .specify/templates/plan-template.md
+⚠ .specify/templates/spec-template.md
+⚠ .specify/templates/tasks-template.md
+⚠ .specify/templates/commands/*.md
+
+Follow-up TODOs:
+None
+-->
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Documentation Management
+仕様書は`docs`ディレクトリに格納し、常に最新の状態を維持しなければならない（MUST）。
+これにより、プロジェクトの一貫性と透明性を確保し、全てのステークホルダーが最新の情報にアクセスできる。
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Change History
+仕様書の変更履歴は明確に記録されなければならない（MUST）。
+各変更には以下の情報を含める：
+- 変更日時
+- 変更者
+- 変更内容
+- 変更理由
+変更履歴の明確な記録により、プロジェクトの進化と意思決定の過程を追跡可能にする。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Test-Driven Development
+実装はt-wadaスタイルのTDDに従って行わなければならない（MUST）。
+開発プロセスは以下のサイクルを厳密に遵守する：
+1. テストを書く（Red）
+2. テストが通るように実装する（Green）
+3. リファクタリングを行う（Refactor）
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Docker-First Development
+ビルド環境は可能な限りDockerで構築しなければならない（MUST）。
+これにより：
+- 開発環境の一貫性を確保
+- 環境依存の問題を最小化
+- デプロイメントの再現性を保証
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Issue-Based Management
+問題・バグの管理はissueベースで行い、以下の原則を遵守する：
+- 1つの問題につき1つのissueを作成（MUST）
+- 1つのissueにつき1つの修正を行う（MUST）
+- 各issueには再現手順、影響範囲、解決策を明記する（SHOULD）
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Development Workflow
+1. 新機能の追加や修正は必ずissueから開始する
+2. ブランチ名はissue番号を含める（例：feature/#123-add-new-feature）
+3. コミットメッセージはissue番号を参照する
+4. PRレビューは最低1名の承認を必要とする
+5. マージ前にCI/CDパイプラインのすべてのチェックをパスする
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Quality Gates
+1. すべてのテストがパスすること
+2. コードカバレッジが80%以上であること
+3. リンター/フォーマッターのチェックをパスすること
+4. ドキュメントが更新されていること
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+本憲章は、プロジェクトの全ての開発活動において最上位の指針となる。
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+変更プロセス：
+1. 変更提案はissueとして提出
+2. コアメンバーによるレビューと議論
+3. 承認後、PRを作成
+4. マージ前に移行計画の作成が必要
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+コンプライアンス：
+- 全てのPRは本憲章への準拠を確認する
+- 四半期ごとにコンプライアンスレビューを実施
+- 違反が発見された場合は即座に修正
+
+**Version**: 1.0.0 | **Ratified**: 2025-11-03 | **Last Amended**: 2025-11-03

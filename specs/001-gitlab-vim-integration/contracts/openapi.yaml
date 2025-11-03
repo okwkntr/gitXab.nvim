@@ -1,0 +1,101 @@
+openapi: 3.0.1
+info:
+  title: GitXab Backend (Minimal GitLab facade)
+  version: 0.1.0
+servers:
+  - url: http://localhost:PORT
+paths:
+  /projects:
+    get:
+      summary: List projects
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+  /projects/{projectId}/issues:
+    get:
+      summary: List issues for project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  /projects/{projectId}/issues/{issueIid}:
+    get:
+      summary: Get issue detail
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: issueIid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  /projects/{projectId}/merge_requests:
+    get:
+      summary: List merge requests for project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        path:
+          type: string
+        description:
+          type: string
+    Issue:
+      type: object
+      properties:
+        id:
+          type: integer
+        iid:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+    MergeRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        iid:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
