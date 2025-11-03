@@ -13,6 +13,12 @@
 - [ ] T004 [P] Add initial CI workflow skeleton (GitHub Actions) to run `deno test` and Lua unit tests — `.github/workflows/ci.yml`
 - [ ] T005 [P] Add lint/format config: `deno fmt` and `deno lint` for backend; `stylua`/`luacheck` config for Lua — `deno-backend/`, `.stylua.toml`
 - [ ] T006 Create initial Dockerfile for backend and development Docker Compose (optional) — `deno-backend/Dockerfile`, `docker-compose.yml`
+ - [X] T001 [P] Create repository layout and directories (see plan) — `lua/gitxab/`, `deno-backend/`, `specs/001-gitlab-vim-integration/`
+ - [X] T002 Initialize Deno project in `deno-backend/` (tsconfig, import_map, deps) — `deno-backend/`
+ - [X] T003 Initialize Lua/Neovim plugin layout in `lua/gitxab/` and `plugin/` dev loader — `lua/gitxab/`, `plugin/`
+ - [X] T004 [P] Add initial CI workflow skeleton (GitHub Actions) to run `deno test` and Lua unit tests — `.github/workflows/ci.yml`
+ - [X] T005 [P] Add lint/format config: `deno fmt` and `deno lint` for backend; `stylua`/`luacheck` config for Lua — `deno-backend/`, `.stylua.toml`
+ - [X] T006 Create initial Dockerfile for backend and development Docker Compose (optional) — `deno-backend/Dockerfile`, `docker-compose.yml`
 
 ---
 

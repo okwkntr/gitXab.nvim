@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["esnext"],
+    "types": []
+  },
+  "tasks": {
+    "start": "deno run --allow-net --allow-read --allow-env --unstable src/server.ts",
+    "test": "deno test"
+  }
+}
