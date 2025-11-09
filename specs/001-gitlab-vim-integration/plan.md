@@ -7,7 +7,14 @@
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+実装はフロントエンドをNeovimのLuaで、バックエンドはDeno/TypeScriptで分離したアーキテクチャを採用する。
+フロントはNeovimのバッファ/コマンド/KVマッピングを担当し、バックエンドはGitLab APIとの通信、認証、キャッシュ、差分解析を担当する。
+プロセス間通信はUnix Domain Socket（非対応環境ではTCP）で行い、JSONベースの双方向メッセージプロトコルを用いる。
+
+バックエンド側の GitLab 呼び出しロジックはライブラリ化された関数群として実装し、同じ関数をサービス（IPC）と CLI の両方から再利用する設計とする。
+これにより、デバッグや自動化（CI/CD）で CLI を使って同じロジックを呼べるようになり、コード重複を避けてテストしやすくする。
+
+CLI の提供例: `deno-backend/cli.ts` にて `list-projects`, `get-issue`, `list-mrs` などのサブコマンドを公開し、JSON を stdout に出力するインターフェースを備える。
 
 ## Technical Context
 

@@ -26,9 +26,11 @@
 
 **Purpose**: Core infra that MUST be complete before user stories
 
-- [ ] T007 [P] Define IPC protocol document (NDJSON framing, commands, events) — `specs/001-gitlab-vim-integration/contracts/ipc-protocol.md`
-- [ ] T008 Implement minimal Deno backend server skeleton (IPC server, health endpoint) — `deno-backend/src/server.ts`
-- [ ] T009 Implement Lua IPC client skeleton (connect to UDS/TCP, NDJSON helper) — `lua/gitxab/ipc.lua`
+ - [X] T007 [P] Define IPC protocol document (NDJSON framing, commands, events) — `specs/001-gitlab-vim-integration/contracts/ipc-protocol.md`
+ - [X] T008 Implement minimal Deno backend server skeleton (IPC server, health endpoint) — `deno-backend/src/server.ts`
+ - [X] T009 Implement Lua IPC client skeleton (connect to UDS/TCP, NDJSON helper) — `lua/gitxab/ipc.lua`
+ - [X] T010 Implement authentication storage in backend (env + config file fallback) — `deno-backend/src/auth/keyring.ts`
+ - [X] T011 Implement cache manager in backend with ETag support — `deno-backend/src/cache/cache_manager.ts`
 - [ ] T010 Implement authentication storage in backend (keyring integration + file fallback) — `deno-backend/src/auth/keyring.ts`
 - [ ] T011 Implement cache manager in backend with ETag support — `deno-backend/src/cache/cache_manager.ts`
 - [ ] T012 [P] Add test scaffolding: `deno test` setup and Lua unit test harness (headless nvim or busted-like) — `deno-backend/tests/`, `tests/lua/`
