@@ -1,8 +1,4 @@
--- plugin entrypoint for Neovim
-local ok, gitxab = pcall(require, 'gitxab')
-if not ok then
-  return
-end
-
--- Default setup (can be overridden in user's init.lua)
-gitxab.setup()
+-- GitXab.vim - Denops-based GitLab integration plugin
+-- This file is intentionally minimal - the actual plugin logic is in:
+-- - autoload/gitxab.vim (Vim script for command definitions)
+-- - denops/gitxab/main.ts (TypeScript for GitLab API logic)

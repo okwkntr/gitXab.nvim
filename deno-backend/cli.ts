@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --allow-net --allow-read --allow-env --unstable
 
-import { listProjects, getIssue, listMergeRequests } from "./src/services/gitlab_client.ts";
+// Use the library entry point instead of direct service import
+import { listProjects, getIssue, listMergeRequests } from "./mod.ts";
 
 function usage() {
   console.error("Usage: cli.ts <command> [options]\nCommands:\n  list-projects [--q=query]\n  get-issue --project <id> --iid <iid>\n  list-mrs --project <id>\n");
