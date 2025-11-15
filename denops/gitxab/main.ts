@@ -32,6 +32,106 @@ const projectDataMap = new Map<number, Project[]>();
 // Store issue data for interactive navigation
 const issueDataMap = new Map<number, Issue[]>();
 
+/**
+ * Find existing buffer by filetype and reuse it, or create new one
+ * @param denops - Denops instance
+ * @param filetype - Buffer filetype to search for
+ * @param bufferName - Optional buffer name to set (for new buffers only)
+ * @returns Buffer number (existing or new), and whether it's a new buffer
+ */
+async function findOrCreateBuffer(
+  denops: Denops,
+  filetype: string,
+  bufferName?: string
+): Promise<{ bufnr: number; isNew: boolean }> {
+  const debug = Deno.env.get("GITXAB_DEBUG") === "1";
+  
+  if (debug) {
+    await denops.cmd(`echo "[GitXab Debug] findOrCreateBuffer: filetype=${filetype}, bufferName=${bufferName || 'none'}"`);
+  }
+  
+  // Get list of all buffers
+  const buffers = await fn.getbufinfo(denops, { buflisted: true });
+  
+  if (debug) {
+    await denops.cmd(`echo "[GitXab Debug] Found ${buffers.length} listed buffers"`);
+  }
+  
+  // Search for existing buffer with matching filetype OR buffer name
+  for (const buf of buffers) {
+    const bufnr = buf.bufnr;
+    const ft = await fn.getbufvar(denops, bufnr, "&filetype") as string;
+    const bufname = await fn.bufname(denops, bufnr) as string;
+    
+    if (debug) {
+      await denops.cmd(`echo "[GitXab Debug] Checking buffer ${bufnr}: filetype='${ft}', name='${bufname}'"`);
+    }
+    
+    // Match by filetype OR buffer name
+    const matchesFiletype = ft === filetype;
+    const matchesName = bufferName && bufname === bufferName;
+    
+    if (matchesFiletype || matchesName) {
+      // Found existing buffer - switch to it
+      if (debug) {
+        const matchType = matchesFiletype ? "filetype" : "name";
+        await denops.cmd(`echo "[GitXab Debug] Found existing buffer ${bufnr} by ${matchType}"`);
+      }
+      
+      // Check if buffer is visible in any window
+      const winnr = await fn.bufwinnr(denops, bufnr) as number;
+      
+      if (winnr !== -1) {
+        // Buffer is visible - switch to that window and reuse it
+        if (debug) {
+          await denops.cmd(`echo "[GitXab Debug] Buffer visible in window ${winnr}, switching to it"`);
+        }
+        await denops.cmd(`${winnr}wincmd w`);
+        // Make buffer modifiable temporarily for content update
+        await vars.b.set(denops, "modifiable", true);
+      } else {
+        // Buffer exists but not visible - switch to it in current window
+        if (debug) {
+          await denops.cmd(`echo "[GitXab Debug] Buffer not visible, switching to it with :buffer ${bufnr}"`);
+        }
+        await denops.cmd(`buffer ${bufnr}`);
+        await vars.b.set(denops, "modifiable", true);
+      }
+      return { bufnr, isNew: false };
+    }
+  }
+  
+  // No existing buffer found - create new one
+  if (debug) {
+    await denops.cmd(`echo "[GitXab Debug] No existing buffer found, creating new one"`);
+  }
+  
+  await denops.cmd("new");
+  const bufnr = await fn.bufnr(denops, "%") as number;
+  
+  // Set buffer name if provided (only for new buffers)
+  if (bufferName) {
+    try {
+      await denops.cmd(`file ${bufferName}`);
+      if (debug) {
+        await denops.cmd(`echo "[GitXab Debug] Set buffer name to '${bufferName}'"`);
+      }
+    } catch (error) {
+      // Ignore errors when setting buffer name
+      if (debug) {
+        const msg = error instanceof Error ? error.message : String(error);
+        await denops.cmd(`echo "[GitXab Debug] Failed to set buffer name: ${msg}"`);
+      }
+    }
+  }
+  
+  if (debug) {
+    await denops.cmd(`echo "[GitXab Debug] Created new buffer ${bufnr}"`);
+  }
+  
+  return { bufnr, isNew: true };
+}
+
 export async function main(denops: Denops): Promise<void> {
   // Register plugin dispatcher functions
   denops.dispatcher = {
@@ -62,9 +162,12 @@ export async function main(denops: Denops): Promise<void> {
           return [];
         }
         
-        // Create a new buffer for displaying projects
-        await denops.cmd("new");
-        const bufnr = await fn.bufnr(denops, "%");
+        // Find or create buffer for displaying projects
+        const { bufnr, isNew } = await findOrCreateBuffer(
+          denops,
+          "gitxab-projects",
+          "GitXab://projects"
+        );
         
         // Store project data for this buffer
         projectDataMap.set(bufnr, projects);
@@ -90,25 +193,27 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "modifiable", false);
         await vars.b.set(denops, "filetype", "gitxab-projects");
         
-        // Set up key mappings for interactive navigation
-        await mapping.map(
-          denops,
-          "<CR>",
-          `<Cmd>call denops#request('${denops.name}', 'openProjectMenu', [bufnr('%')])<CR>`,
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "q",
-          "<Cmd>close<CR>",
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "?",
-          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['projects'])<CR>`,
-          { mode: "n", buffer: true }
-        );
+        // Set up key mappings for interactive navigation (only for new buffers)
+        if (isNew) {
+          await mapping.map(
+            denops,
+            "<CR>",
+            `<Cmd>call denops#request('${denops.name}', 'openProjectMenu', [bufnr('%')])<CR>`,
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "q",
+            "<Cmd>close<CR>",
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "?",
+            `<Cmd>call denops#request('${denops.name}', 'showHelp', ['projects'])<CR>`,
+            { mode: "n", buffer: true }
+          );
+        }
         
         return projects;
       } catch (error) {
@@ -205,9 +310,12 @@ export async function main(denops: Denops): Promise<void> {
           return [];
         }
         
-        // Create a new buffer for displaying issues
-        await denops.cmd("new");
-        const bufnr = await fn.bufnr(denops, "%");
+        // Find or create buffer for displaying issues
+        const { bufnr, isNew } = await findOrCreateBuffer(
+          denops,
+          "gitxab-issues",
+          `GitXab://project/${pid}/issues`
+        );
         
         // Store issue data for this buffer
         issueDataMap.set(bufnr, issues);
@@ -265,37 +373,39 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "modifiable", false);
         await vars.b.set(denops, "filetype", "gitxab-issues");
         
-        // Set up key mappings
-        await mapping.map(
-          denops,
-          "<CR>",
-          `<Cmd>call denops#request('${denops.name}', 'openIssueDetail', [bufnr('%'), ${pid}])<CR>`,
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "q",
-          "<Cmd>close<CR>",
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "r",
-          `<Cmd>call denops#request('${denops.name}', 'listIssues', [${pid}, '${stateFilter || ""}'])<CR>`,
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "n",
-          `<Cmd>call denops#request('${denops.name}', 'createIssue', [${pid}])<CR>`,
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "?",
-          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issues'])<CR>`,
-          { mode: "n", buffer: true }
-        );
+        // Set up key mappings (only for new buffers)
+        if (isNew) {
+          await mapping.map(
+            denops,
+            "<CR>",
+            `<Cmd>call denops#request('${denops.name}', 'openIssueDetail', [bufnr('%'), ${pid}])<CR>`,
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "q",
+            "<Cmd>close<CR>",
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "r",
+            `<Cmd>call denops#request('${denops.name}', 'listIssues', [${pid}, '${stateFilter || ""}'])<CR>`,
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "n",
+            `<Cmd>call denops#request('${denops.name}', 'createIssue', [${pid}])<CR>`,
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "?",
+            `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issues'])<CR>`,
+            { mode: "n", buffer: true }
+          );
+        }
         
         return issues;
       } catch (error) {
@@ -423,9 +533,12 @@ export async function main(denops: Denops): Promise<void> {
           apiGetIssueNotes(pid, iid),
         ]);
         
-        // Create a new buffer for displaying issue details
-        await denops.cmd("new");
-        const bufnr = await fn.bufnr(denops, "%");
+        // Find or create buffer for displaying issue details
+        const { bufnr, isNew } = await findOrCreateBuffer(
+          denops,
+          "gitxab-issue",
+          `GitXab://project/${pid}/issue/${iid}`
+        );
         
         // Format issue details
         const lines: string[] = [
@@ -492,37 +605,39 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "gitxab_project_id", pid);
         await vars.b.set(denops, "gitxab_issue_iid", iid);
         
-        // Set up key mappings
-        await mapping.map(
-          denops,
-          "q",
-          "<Cmd>close<CR>",
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "c",
-          `<Cmd>call denops#request('${denops.name}', 'addComment', [${pid}, ${iid}])<CR>`,
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "e",
-          `<Cmd>call denops#request('${denops.name}', 'editIssue', [${pid}, ${iid}])<CR>`,
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "r",
-          `<Cmd>call denops#request('${denops.name}', 'viewIssue', [${pid}, ${iid}])<CR>`,
-          { mode: "n", buffer: true }
-        );
-        await mapping.map(
-          denops,
-          "?",
-          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issue-detail'])<CR>`,
-          { mode: "n", buffer: true }
-        );
+        // Set up key mappings (only for new buffers)
+        if (isNew) {
+          await mapping.map(
+            denops,
+            "q",
+            "<Cmd>close<CR>",
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "c",
+            `<Cmd>call denops#request('${denops.name}', 'addComment', [${pid}, ${iid}])<CR>`,
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "e",
+            `<Cmd>call denops#request('${denops.name}', 'editIssue', [${pid}, ${iid}])<CR>`,
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "r",
+            `<Cmd>call denops#request('${denops.name}', 'viewIssue', [${pid}, ${iid}])<CR>`,
+            { mode: "n", buffer: true }
+          );
+          await mapping.map(
+            denops,
+            "?",
+            `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issue-detail'])<CR>`,
+            { mode: "n", buffer: true }
+          );
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to view issue: ${message}`);

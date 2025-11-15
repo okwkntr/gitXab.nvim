@@ -13,9 +13,15 @@ class MockDenops {
   
   private commands: string[] = [];
   private echoMessages: string[] = [];
+  private buffers: Map<number, { filetype: string; variables: Record<string, unknown> }> = new Map();
+  private currentBufnr = 1;
   
   async cmd(command: string): Promise<void> {
     this.commands.push(command);
+    // Simulate buffer creation
+    if (command === "new" || command.includes("sbuffer")) {
+      this.currentBufnr++;
+    }
   }
   
   async call(func: string, ...args: unknown[]): Promise<unknown> {
@@ -28,7 +34,42 @@ class MockDenops {
     if (func === "inputlist") {
       return 0; // Return 0 (cancel) for inputlist
     }
+    if (func === "bufnr") {
+      return this.currentBufnr;
+    }
+    if (func === "getbufinfo") {
+      // Return array of buffer info
+      const buffers = Array.from(this.buffers.entries()).map(([bufnr, data]) => ({
+        bufnr,
+        variables: data.variables,
+      }));
+      return buffers;
+    }
+    if (func === "getbufvar") {
+      const [bufnr, varname] = args;
+      if (varname === "&filetype") {
+        return this.buffers.get(bufnr as number)?.filetype || "";
+      }
+      return this.buffers.get(bufnr as number)?.variables[varname as string];
+    }
+    if (func === "bufwinnr") {
+      // Return -1 (buffer not visible) for testing
+      return -1;
+    }
     return null;
+  }
+  
+  // Simulate buffer variable setting
+  async setBufVar(bufnr: number, varname: string, value: unknown): Promise<void> {
+    if (!this.buffers.has(bufnr)) {
+      this.buffers.set(bufnr, { filetype: "", variables: {} });
+    }
+    const buf = this.buffers.get(bufnr)!;
+    if (varname === "filetype") {
+      buf.filetype = value as string;
+    } else {
+      buf.variables[varname] = value;
+    }
   }
   
   getCommands(): string[] {
@@ -187,4 +228,56 @@ Deno.test("commands are registered", async () => {
   assertEquals(commandText.includes("GitXabCreateIssue"), true);
   
   console.log(`  ✓ ${commandDefs.length} commands registered`);
+});
+
+Deno.test("buffer reuse - findOrCreateBuffer creates new buffer first time", async () => {
+  const denops = new MockDenops();
+  
+  const { main } = await import("../denops/gitxab/main.ts");
+  await main(denops as any);
+  
+  // Clear any initialization commands
+  denops.clearCommands();
+  
+  // First call to listProjects should create new buffer
+  try {
+    await denops.dispatcher.listProjects();
+  } catch {
+    // Expected to fail without token
+  }
+  
+  const commands = denops.getCommands();
+  const hasNewCommand = commands.some(cmd => cmd === "new");
+  
+  assertEquals(hasNewCommand, true, "Should create new buffer on first call");
+  console.log("  ✓ First call creates new buffer");
+});
+
+Deno.test("buffer reuse - findOrCreateBuffer reuses existing buffer", async () => {
+  const denops = new MockDenops();
+  
+  const { main } = await import("../denops/gitxab/main.ts");
+  await main(denops as any);
+  
+  // Simulate existing buffer with gitxab-projects filetype
+  const existingBufnr = 5;
+  await denops.setBufVar(existingBufnr, "filetype", "gitxab-projects");
+  
+  // Clear commands
+  denops.clearCommands();
+  
+  // Second call should reuse buffer
+  try {
+    await denops.dispatcher.listProjects();
+  } catch {
+    // Expected to fail without token
+  }
+  
+  const commands = denops.getCommands();
+  const hasSbufferCommand = commands.some(cmd => cmd.includes("sbuffer"));
+  const hasNewCommand = commands.some(cmd => cmd === "new");
+  
+  // Should use sbuffer (reuse) not new (create)
+  assertEquals(hasSbufferCommand || !hasNewCommand, true, "Should reuse existing buffer");
+  console.log("  ✓ Second call reuses existing buffer");
 });

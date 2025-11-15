@@ -5,9 +5,11 @@ Neovim plugin for GitLab integration - Access GitLab features directly from your
 ## Features
 
 - 🔍 Project listing and search
-- 📋 Issue management (list, view, comment)
+- 📋 Issue management (list, view, create, edit, comment)
 - 🔀 Merge Request management (list, view, diff, comment)
 - 💬 Inline diff comments
+- 🔄 Smart buffer reuse - No duplicate windows on reload
+- ⌨️ Keyboard shortcuts with built-in help (`?` key)
 - 🚀 Powered by denops.vim - No separate server required!
 
 ## Architecture
@@ -220,21 +222,28 @@ You can also create an issue from:
 
 #### Keyboard Shortcuts
 
+All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitXab buffer to see context-sensitive help.
+
 **Project List Buffer** (`:GitXabProjects`):
 - `<Enter>` - Open project menu (View Issues / Create Issue / View MRs)
 - `q` - Close buffer
+- `?` - Show help
 
 **Issue List Buffer** (`:GitXabIssues`):
 - `<Enter>` - View issue details and comments
 - `q` - Close buffer
-- `r` - Refresh issue list
+- `r` - Refresh issue list (reuses existing buffer)
 - `n` - Create new issue
+- `?` - Show help
 
 **Issue Detail Buffer**:
 - `c` - Add comment
 - `e` - Edit issue (title/description/labels/state)
-- `r` - Refresh issue view
+- `r` - Refresh issue view (reuses existing buffer)
 - `q` - Close buffer
+- `?` - Show help
+
+**Buffer Reuse**: When you press `r` (refresh) or re-run commands like `:GitXabIssues`, GitXab automatically reuses the existing buffer instead of creating a new window. This keeps your workspace clean and prevents window clutter.
 
 #### Troubleshooting
 
@@ -270,7 +279,7 @@ You can also create an issue from:
 
 **Enable debug logging:**
 ```vim
-" Enable detailed API request/response logging
+" Enable detailed debug logging
 :let $GITXAB_DEBUG = "1"
 :call denops#plugin#reload('gitxab')
 :GitXabProjects
@@ -280,8 +289,19 @@ vim.env.GITXAB_DEBUG = "1"
 ```
 
 Debug logs will show:
+- Buffer reuse logic: finding existing buffers, creating new ones
+- Buffer operations: filetype checks, window switching
 - Request: URL, token status, headers
 - Response: Status code, content type, body preview
+
+**Buffer reuse issues:**
+If windows keep splitting or buffers multiply:
+1. Enable debug mode: `:let $GITXAB_DEBUG = "1"`
+2. Run the command: `:GitXabProjects`
+3. Check messages: `:messages`
+4. Look for "findOrCreateBuffer" debug output
+5. Verify buffer names: `:ls` (should show `GitXab://...` names)
+6. Check filetype: `:set filetype?` (should be `gitxab-projects`, `gitxab-issues`, or `gitxab-issue`)
 
 ### CLI Usage
 
@@ -306,29 +326,30 @@ The CLI uses the same GitLab API client library as the Neovim plugin.
 
 ## Testing
 
-### Run Backend Tests
+### Run Automated Tests
 
+**Backend API Tests**:
 ```bash
-cd deno-backend
-deno test --allow-net --allow-read --allow-env
+deno test --allow-net --allow-read --allow-env tests/backend_test.ts
 ```
 
-### Test with Mock Server
-
-The mock server provides test data without hitting the real GitLab API:
-
+**Integration Tests** (denops plugin functions):
 ```bash
-# Start mock server (HTTP on :3000, IPC on :8765)
-deno run --allow-net --allow-read --allow-env deno-backend/src/server.ts
-
-# In another terminal, test CLI
-deno run --allow-net --allow-read --allow-env deno-backend/cli.ts list-projects --q=gitxab
+deno test --allow-env --allow-read --allow-net --allow-write tests/integration_test.ts
 ```
 
-Expected output:
-```json
-[{"id":1,"name":"gitxab","path":"gitxab","description":"Neovim GitLab plugin"}]
+Expected: All tests pass
+- Backend tests: 4 tests (listProjects, listIssues with filters)
+- Integration tests: 9 tests (dispatcher functions, buffer reuse, help system)
+
+### Manual Testing
+
+**Buffer Reuse Test** (verify windows don't multiply on reload):
+```bash
+./tests/test_buffer_reuse.sh
 ```
+
+This interactive test helps verify that buffers are reused correctly and windows don't split on refresh. See `tests/TEST_BUFFER_REUSE.md` for detailed test procedures.
 
 ### Test with Real GitLab API
 
