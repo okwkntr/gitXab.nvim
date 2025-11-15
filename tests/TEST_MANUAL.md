@@ -82,13 +82,47 @@ Then run `:GitXabIssues 278964` and check `:messages` for debug output.
 - Check plugin loaded: `:echo exists(':GitXabIssues')`
 - Should return `2` if command exists
 
+## Test Issue Creation (Optional)
+
+If you have a GitLab token and want to test issue creation:
+
+```bash
+# Set your project ID
+TEST_PROJECT_ID=<your_project_id> deno run --allow-env --allow-read --allow-net tests/test_create_issue.ts
+```
+
+Or in Neovim:
+```vim
+:GitXabCreateIssue <your_project_id>
+```
+
+Follow the prompts to enter:
+- Issue title
+- Description (optional)
+- Labels (optional)
+
 ## Verification Checklist
 
+**Basic Features:**
 - [ ] Deno script test passes
-- [ ] :GitXabProjects command works (previous feature)
+- [ ] :GitXabProjects command works
 - [ ] :GitXabIssues 278964 opens issue buffer
 - [ ] Buffer shows project header with issue count
 - [ ] Issues are grouped by state (Open/Closed)
 - [ ] Issue format correct: #IID Title [labels] @assignee date
 - [ ] Buffer is read-only (buftype=nofile, modifiable=false)
 - [ ] Buffer filetype is 'gitxab-issues'
+
+**Interactive Features:**
+- [ ] Press `<Enter>` on project opens menu
+- [ ] Select "View Issues" navigates to issue list
+- [ ] Press `n` in issue list prompts for new issue
+- [ ] Press `q` closes buffers
+- [ ] Press `r` refreshes issue list
+
+**Issue Creation:**
+- [ ] :GitXabCreateIssue prompts for title
+- [ ] Can enter description (optional)
+- [ ] Can enter labels (optional)
+- [ ] Success message shows issue IID
+- [ ] Issue appears in GitLab

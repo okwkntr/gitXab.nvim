@@ -31,24 +31,45 @@ function buildUrl(path: string, params?: Record<string, string|number|boolean>) 
   return url.toString();
 }
 
-async function requestGet(path: string, params?: Record<string, string|number|boolean>) {
+async function request(
+  method: string,
+  path: string, 
+  params?: Record<string, string|number|boolean>,
+  body?: unknown
+) {
   const token = await getToken();
   const url = buildUrl(path, params);
-  const headers: Record<string,string> = { "accept": "application/json" };
+  const headers: Record<string,string> = { 
+    "accept": "application/json",
+    "content-type": "application/json"
+  };
   if (token) headers["authorization"] = `Bearer ${token}`;
   
   // Debug logging (enable with GITXAB_DEBUG=1)
   const debug = Deno.env.get("GITXAB_DEBUG") === "1";
   if (debug) {
-    console.log("[GitLab API] Request:", {
+    console.log(`[GitLab API] ${method} Request:`, {
       url,
       hasToken: !!token,
       tokenPrefix: token ? token.substring(0, 8) + "..." : "none",
       headers: Object.keys(headers),
+      hasBody: !!body,
     });
   }
   
-  const res = await fetchWithCache(url, { headers });
+  const options: RequestInit = { 
+    method,
+    headers 
+  };
+  
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+  
+  // Use cache only for GET requests
+  const res = method === "GET" 
+    ? await fetchWithCache(url, options)
+    : await fetch(url, options);
   
   if (res.status === 401) {
     throw new Error("Unauthorized: GitLab token is missing or invalid. Please set GITLAB_TOKEN environment variable.");
@@ -95,6 +116,18 @@ async function requestGet(path: string, params?: Record<string, string|number|bo
   }
 }
 
+async function requestGet(path: string, params?: Record<string, string|number|boolean>) {
+  return await request("GET", path, params);
+}
+
+async function requestPost(path: string, body: unknown, params?: Record<string, string|number|boolean>) {
+  return await request("POST", path, params, body);
+}
+
+async function requestPut(path: string, body: unknown, params?: Record<string, string|number|boolean>) {
+  return await request("PUT", path, params, body);
+}
+
 export async function listProjects(q?: string) {
   const params = q ? { q } : undefined;
   return await requestGet('/projects', params);
@@ -108,6 +141,38 @@ export async function listIssues(projectId: number, state?: 'opened' | 'closed' 
 
 export async function getIssue(projectId: number, issueIid: number) {
   return await requestGet(`/projects/${projectId}/issues/${issueIid}`);
+}
+
+export interface CreateIssueParams {
+  title: string;
+  description?: string;
+  assignee_ids?: number[];
+  labels?: string;
+  milestone_id?: number;
+}
+
+export async function createIssue(projectId: number, params: CreateIssueParams) {
+  return await requestPost(`/projects/${projectId}/issues`, params);
+}
+
+export interface UpdateIssueParams {
+  title?: string;
+  description?: string;
+  assignee_ids?: number[];
+  labels?: string;
+  state_event?: 'close' | 'reopen';
+}
+
+export async function updateIssue(projectId: number, issueIid: number, params: UpdateIssueParams) {
+  return await requestPut(`/projects/${projectId}/issues/${issueIid}`, params);
+}
+
+export async function getIssueNotes(projectId: number, issueIid: number) {
+  return await requestGet(`/projects/${projectId}/issues/${issueIid}/notes`);
+}
+
+export async function createIssueNote(projectId: number, issueIid: number, body: string) {
+  return await requestPost(`/projects/${projectId}/issues/${issueIid}/notes`, { body });
 }
 
 export async function listMergeRequests(projectId: number) {

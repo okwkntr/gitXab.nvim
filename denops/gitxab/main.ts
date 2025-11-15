@@ -14,13 +14,23 @@ import * as vars from "https://deno.land/x/denops_std@v6.0.1/variable/mod.ts";
 import * as mapping from "https://deno.land/x/denops_std@v6.0.1/mapping/mod.ts";
 import { 
   listProjects, 
-  listIssues as apiListIssues, 
+  listIssues as apiListIssues,
+  getIssue as apiGetIssue,
+  createIssue as apiCreateIssue,
+  updateIssue as apiUpdateIssue,
+  getIssueNotes as apiGetIssueNotes,
+  createIssueNote as apiCreateIssueNote,
   type Project, 
-  type Issue 
+  type Issue,
+  type IssueNote,
+  type CreateIssueParams,
+  type UpdateIssueParams 
 } from "../../deno-backend/mod.ts";
 
 // Store project data for interactive navigation
 const projectDataMap = new Map<number, Project[]>();
+// Store issue data for interactive navigation
+const issueDataMap = new Map<number, Issue[]>();
 
 export async function main(denops: Denops): Promise<void> {
   // Register plugin dispatcher functions
@@ -120,8 +130,9 @@ export async function main(denops: Denops): Promise<void> {
         const choices = [
           `Project: ${project.name} (ID: ${project.id})`,
           "1. View Issues",
-          "2. View Merge Requests (Coming Soon)",
-          "3. Cancel",
+          "2. Create New Issue",
+          "3. View Merge Requests (Coming Soon)",
+          "4. Cancel",
         ];
         
         const choice = await denops.call("inputlist", choices) as number;
@@ -130,9 +141,12 @@ export async function main(denops: Denops): Promise<void> {
           // View issues
           await denops.dispatcher.listIssues(project.id);
         } else if (choice === 2) {
+          // Create issue
+          await denops.dispatcher.createIssue(project.id);
+        } else if (choice === 3) {
           await denops.cmd('echohl WarningMsg | echo "Merge Requests feature coming soon" | echohl None');
         }
-        // choice === 3 or 0 (ESC) - do nothing
+        // choice === 4 or 0 (ESC) - do nothing
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to open project menu: ${message}`);
@@ -173,6 +187,9 @@ export async function main(denops: Denops): Promise<void> {
         // Create a new buffer for displaying issues
         await denops.cmd("new");
         const bufnr = await fn.bufnr(denops, "%");
+        
+        // Store issue data for this buffer
+        issueDataMap.set(bufnr, issues);
         
         // Format issues for display
         const lines: string[] = [
@@ -227,6 +244,12 @@ export async function main(denops: Denops): Promise<void> {
         // Set up key mappings
         await mapping.map(
           denops,
+          "<CR>",
+          `<Cmd>call denops#request('${denops.name}', 'openIssueDetail', [bufnr('%'), ${pid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
           "q",
           "<Cmd>close<CR>",
           { mode: "n", buffer: true }
@@ -235,6 +258,12 @@ export async function main(denops: Denops): Promise<void> {
           denops,
           "r",
           `<Cmd>call denops#request('${denops.name}', 'listIssues', [${pid}, '${stateFilter || ""}'])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "n",
+          `<Cmd>call denops#request('${denops.name}', 'createIssue', [${pid}])<CR>`,
           { mode: "n", buffer: true }
         );
         
@@ -247,14 +276,319 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * Get issue details
+     * Create a new issue
+     * @param projectId - GitLab project ID
+     */
+    async createIssue(projectId: unknown): Promise<void> {
+      try {
+        if (typeof projectId !== "number" && typeof projectId !== "string") {
+          throw new Error("Project ID is required");
+        }
+        
+        const pid = typeof projectId === "string" ? parseInt(projectId, 10) : projectId;
+        if (isNaN(pid)) {
+          throw new Error("Invalid project ID");
+        }
+        
+        // Prompt for issue title
+        const title = await denops.call("input", "Issue title: ") as string;
+        if (!title || title.trim() === "") {
+          await denops.cmd('echohl WarningMsg | echo "Issue creation cancelled" | echohl None');
+          return;
+        }
+        
+        // Prompt for issue description
+        const description = await denops.call("input", "Issue description (optional): ") as string;
+        
+        // Prompt for labels
+        const labelsInput = await denops.call("input", "Labels (comma-separated, optional): ") as string;
+        
+        // Build issue params
+        const params: CreateIssueParams = {
+          title: title.trim(),
+        };
+        
+        if (description && description.trim()) {
+          params.description = description.trim();
+        }
+        
+        if (labelsInput && labelsInput.trim()) {
+          params.labels = labelsInput.trim();
+        }
+        
+        // Create the issue
+        await denops.cmd('echo "Creating issue..."');
+        const issue = await apiCreateIssue(pid, params);
+        
+        // Show success message
+        await denops.cmd(`echohl MoreMsg | echo "✓ Issue #${issue.iid} created successfully" | echohl None`);
+        
+        // Optionally refresh issue list if we're in an issue buffer
+        const filetype = await vars.b.get(denops, "filetype");
+        if (filetype === "gitxab-issues") {
+          await denops.dispatcher.listIssues(pid);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to create issue: ${message}`);
+      }
+    },
+
+    /**
+     * Open issue detail view from issue list
+     * @param bufnr - Buffer number of issue list
+     * @param projectId - GitLab project ID
+     */
+    async openIssueDetail(bufnr: unknown, projectId: unknown): Promise<void> {
+      try {
+        if (typeof bufnr !== "number" || typeof projectId !== "number") {
+          throw new Error("Invalid buffer number or project ID");
+        }
+        
+        // Get current line number
+        const line = await fn.line(denops, ".") as number;
+        
+        // Get current line text to extract issue IID
+        const lineText = await fn.getline(denops, line) as string;
+        
+        // Extract issue IID from line (format: "#IID Title ...")
+        const match = lineText.match(/^#(\d+)\s/);
+        if (!match) {
+          return; // Not on a valid issue line
+        }
+        
+        const issueIid = parseInt(match[1], 10);
+        await denops.dispatcher.viewIssue(projectId, issueIid);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to open issue detail: ${message}`);
+      }
+    },
+
+    /**
+     * View issue details with comments
      * @param projectId - GitLab project ID
      * @param issueIid - Issue IID
      */
-    async getIssue(projectId: unknown, issueIid: unknown): Promise<unknown> {
-      // TODO: Implement issue details display
-      await denops.call("nvim_echo", [[`Not implemented yet: getIssue(${projectId}, ${issueIid})`]], false, {});
-      return null;
+    async viewIssue(projectId: unknown, issueIid: unknown): Promise<void> {
+      try {
+        if (typeof projectId !== "number" && typeof projectId !== "string") {
+          throw new Error("Project ID is required");
+        }
+        if (typeof issueIid !== "number" && typeof issueIid !== "string") {
+          throw new Error("Issue IID is required");
+        }
+        
+        const pid = typeof projectId === "string" ? parseInt(projectId, 10) : projectId;
+        const iid = typeof issueIid === "string" ? parseInt(issueIid, 10) : issueIid;
+        
+        if (isNaN(pid) || isNaN(iid)) {
+          throw new Error("Invalid project ID or issue IID");
+        }
+        
+        // Fetch issue details and comments
+        await denops.cmd('echo "Loading issue..."');
+        const [issue, notes] = await Promise.all([
+          apiGetIssue(pid, iid),
+          apiGetIssueNotes(pid, iid),
+        ]);
+        
+        // Create a new buffer for displaying issue details
+        await denops.cmd("new");
+        const bufnr = await fn.bufnr(denops, "%");
+        
+        // Format issue details
+        const lines: string[] = [
+          `Issue #${issue.iid}: ${issue.title}`,
+          "=" .repeat(80),
+          `Project: #${pid}`,
+          `State: ${issue.state}`,
+          `Author: @${issue.author.username}`,
+          `Created: ${new Date(issue.created_at).toLocaleString()}`,
+          `Updated: ${new Date(issue.updated_at).toLocaleString()}`,
+        ];
+        
+        if (issue.assignee || issue.assignees?.length) {
+          const assignees = issue.assignees?.map((a: { username: string }) => `@${a.username}`).join(", ") || `@${issue.assignee?.username}`;
+          lines.push(`Assignees: ${assignees}`);
+        }
+        
+        if (issue.labels && issue.labels.length > 0) {
+          lines.push(`Labels: ${issue.labels.join(", ")}`);
+        }
+        
+        if (issue.web_url) {
+          lines.push(`URL: ${issue.web_url}`);
+        }
+        
+        lines.push("");
+        lines.push("Description:");
+        lines.push("-".repeat(80));
+        if (issue.description) {
+          lines.push(...issue.description.split("\n"));
+        } else {
+          lines.push("(no description)");
+        }
+        
+        // Add comments
+        const userNotes = notes.filter((n: IssueNote) => !n.system);
+        if (userNotes.length > 0) {
+          lines.push("");
+          lines.push(`Comments (${userNotes.length}):`);
+          lines.push("=" .repeat(80));
+          
+          for (const note of userNotes) {
+            lines.push("");
+            lines.push(`@${note.author.username} - ${new Date(note.created_at).toLocaleString()}`);
+            lines.push("-".repeat(80));
+            lines.push(...note.body.split("\n"));
+          }
+        }
+        
+        // Set buffer content
+        await buffer.ensure(denops, bufnr, async () => {
+          await buffer.replace(denops, bufnr, lines);
+        });
+        
+        // Set buffer options
+        await vars.b.set(denops, "buftype", "nofile");
+        await vars.b.set(denops, "bufhidden", "wipe");
+        await vars.b.set(denops, "modifiable", false);
+        await vars.b.set(denops, "filetype", "gitxab-issue");
+        
+        // Store issue info in buffer variables
+        await vars.b.set(denops, "gitxab_project_id", pid);
+        await vars.b.set(denops, "gitxab_issue_iid", iid);
+        
+        // Set up key mappings
+        await mapping.map(
+          denops,
+          "q",
+          "<Cmd>close<CR>",
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "c",
+          `<Cmd>call denops#request('${denops.name}', 'addComment', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "e",
+          `<Cmd>call denops#request('${denops.name}', 'editIssue', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "r",
+          `<Cmd>call denops#request('${denops.name}', 'viewIssue', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to view issue: ${message}`);
+      }
+    },
+
+    /**
+     * Add comment to issue
+     * @param projectId - GitLab project ID
+     * @param issueIid - Issue IID
+     */
+    async addComment(projectId: unknown, issueIid: unknown): Promise<void> {
+      try {
+        if (typeof projectId !== "number" || typeof issueIid !== "number") {
+          throw new Error("Invalid project ID or issue IID");
+        }
+        
+        // Prompt for comment
+        const comment = await denops.call("input", "Comment: ") as string;
+        if (!comment || comment.trim() === "") {
+          await denops.cmd('echohl WarningMsg | echo "Comment cancelled" | echohl None');
+          return;
+        }
+        
+        // Post comment
+        await denops.cmd('echo "Posting comment..."');
+        await apiCreateIssueNote(projectId, issueIid, comment.trim());
+        
+        // Show success message
+        await denops.cmd('echohl MoreMsg | echo "✓ Comment added" | echohl None');
+        
+        // Refresh issue view
+        await denops.dispatcher.viewIssue(projectId, issueIid);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to add comment: ${message}`);
+      }
+    },
+
+    /**
+     * Edit issue (title, description, labels, state)
+     * @param projectId - GitLab project ID
+     * @param issueIid - Issue IID
+     */
+    async editIssue(projectId: unknown, issueIid: unknown): Promise<void> {
+      try {
+        if (typeof projectId !== "number" || typeof issueIid !== "number") {
+          throw new Error("Invalid project ID or issue IID");
+        }
+        
+        // Show edit menu
+        const choices = [
+          `Edit Issue #${issueIid}`,
+          "1. Edit Title",
+          "2. Edit Description",
+          "3. Edit Labels",
+          "4. Close Issue",
+          "5. Reopen Issue",
+          "6. Cancel",
+        ];
+        
+        const choice = await denops.call("inputlist", choices) as number;
+        const params: UpdateIssueParams = {};
+        
+        if (choice === 1) {
+          const title = await denops.call("input", "New title: ") as string;
+          if (title && title.trim()) {
+            params.title = title.trim();
+          }
+        } else if (choice === 2) {
+          const description = await denops.call("input", "New description: ") as string;
+          if (description !== null) {
+            params.description = description.trim();
+          }
+        } else if (choice === 3) {
+          const labels = await denops.call("input", "Labels (comma-separated): ") as string;
+          if (labels !== null) {
+            params.labels = labels.trim();
+          }
+        } else if (choice === 4) {
+          params.state_event = "close";
+        } else if (choice === 5) {
+          params.state_event = "reopen";
+        } else {
+          return; // Cancel
+        }
+        
+        if (Object.keys(params).length === 0) {
+          return;
+        }
+        
+        // Update issue
+        await denops.cmd('echo "Updating issue..."');
+        await apiUpdateIssue(projectId, issueIid, params);
+        
+        // Show success message
+        await denops.cmd('echohl MoreMsg | echo "✓ Issue updated" | echohl None');
+        
+        // Refresh issue view
+        await denops.dispatcher.viewIssue(projectId, issueIid);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to edit issue: ${message}`);
+      }
     },
 
     /**
@@ -275,6 +609,10 @@ export async function main(denops: Denops): Promise<void> {
   
   await denops.cmd(
     `command! -nargs=+ GitXabIssues call denops#request('${denops.name}', 'listIssues', [<f-args>])`
+  );
+  
+  await denops.cmd(
+    `command! -nargs=1 GitXabCreateIssue call denops#request('${denops.name}', 'createIssue', [<f-args>])`
   );
   
   await denops.cmd(

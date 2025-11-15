@@ -189,11 +189,28 @@ Closed Issues:
 **Interactive Navigation:**
 - Press `q` to close the buffer
 - Press `r` to refresh the issue list
+- Press `n` to create a new issue
 
 To get the project ID:
 1. Run `:GitXabProjects` and press `<Enter>` on any project
 2. Or check the project's GitLab URL (the ID is visible in project settings)
 3. Or use the GitLab API browser to find project IDs
+
+#### Create Issue
+
+```vim
+" Create a new issue for a project
+:GitXabCreateIssue <projectId>
+```
+
+This will interactively prompt you for:
+- Issue title (required)
+- Issue description (optional)
+- Labels (comma-separated, optional)
+
+You can also create an issue from:
+- Project menu (`:GitXabProjects` → `<Enter>` → "Create New Issue")
+- Issue list buffer (press `n`)
 
 #### List Merge Requests (Coming Soon)
 
@@ -204,12 +221,20 @@ To get the project ID:
 #### Keyboard Shortcuts
 
 **Project List Buffer** (`:GitXabProjects`):
-- `<Enter>` - Open project menu (select Issues/MRs)
+- `<Enter>` - Open project menu (View Issues / Create Issue / View MRs)
 - `q` - Close buffer
 
 **Issue List Buffer** (`:GitXabIssues`):
+- `<Enter>` - View issue details and comments
 - `q` - Close buffer
 - `r` - Refresh issue list
+- `n` - Create new issue
+
+**Issue Detail Buffer**:
+- `c` - Add comment
+- `e` - Edit issue (title/description/labels/state)
+- `r` - Refresh issue view
+- `q` - Close buffer
 
 #### Troubleshooting
 
