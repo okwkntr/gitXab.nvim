@@ -69,11 +69,19 @@ export async function main(denops: Denops): Promise<void> {
         // Store project data for this buffer
         projectDataMap.set(bufnr, projects);
         
+        // Format projects with header
+        const lines: string[] = [
+          "GitLab Projects",
+          "=" .repeat(80),
+          "Keys: <Enter>=Menu  q=Close  ?=Help",
+          "=" .repeat(80),
+          "",
+        ];
+        lines.push(...projects.map(p => `${p.name} - ${p.description || "(no description)"}`));
+        
         // Set buffer options
         await buffer.ensure(denops, bufnr, async () => {
-          await buffer.replace(denops, bufnr, 
-            projects.map(p => `${p.name} - ${p.description || "(no description)"}`)
-          );
+          await buffer.replace(denops, bufnr, lines);
         });
         
         // Set buffer as non-modifiable and scratch
@@ -95,6 +103,12 @@ export async function main(denops: Denops): Promise<void> {
           "<Cmd>close<CR>",
           { mode: "n", buffer: true }
         );
+        await mapping.map(
+          denops,
+          "?",
+          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['projects'])<CR>`,
+          { mode: "n", buffer: true }
+        );
         
         return projects;
       } catch (error) {
@@ -114,17 +128,24 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Invalid buffer number");
         }
         
-        // Get current line number
+        // Get current line text to extract project name
         const line = await fn.line(denops, ".") as number;
+        const lineText = await fn.getline(denops, line) as string;
         
         // Get project data for this buffer
         const projects = projectDataMap.get(bufnr);
-        if (!projects || line < 1 || line > projects.length) {
+        if (!projects) {
           await denops.call("nvim_err_writeln", "GitXab: No project data found");
           return;
         }
         
-        const project = projects[line - 1];
+        // Find project by matching line text (format: "name - description")
+        const projectName = lineText.split(" - ")[0].trim();
+        const project = projects.find(p => p.name === projectName);
+        
+        if (!project) {
+          return; // Not on a valid project line
+        }
         
         // Show menu using inputlist
         const choices = [
@@ -193,8 +214,11 @@ export async function main(denops: Denops): Promise<void> {
         
         // Format issues for display
         const lines: string[] = [
-          `Project: #${pid} (${issues.length} issues)`,
+          `GitLab Issues - Project #${pid}`,
           "=" .repeat(80),
+          "Keys: <Enter>=Detail  n=New  r=Refresh  q=Close  ?=Help",
+          "=" .repeat(80),
+          `Total: ${issues.length} issues`,
           "",
         ];
         
@@ -264,6 +288,12 @@ export async function main(denops: Denops): Promise<void> {
           denops,
           "n",
           `<Cmd>call denops#request('${denops.name}', 'createIssue', [${pid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "?",
+          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issues'])<CR>`,
           { mode: "n", buffer: true }
         );
         
@@ -399,7 +429,9 @@ export async function main(denops: Denops): Promise<void> {
         
         // Format issue details
         const lines: string[] = [
-          `Issue #${issue.iid}: ${issue.title}`,
+          `GitLab Issue #${issue.iid}: ${issue.title}`,
+          "=" .repeat(80),
+          "Keys: c=Comment  e=Edit  r=Refresh  q=Close  ?=Help",
           "=" .repeat(80),
           `Project: #${pid}`,
           `State: ${issue.state}`,
@@ -483,6 +515,12 @@ export async function main(denops: Denops): Promise<void> {
           denops,
           "r",
           `<Cmd>call denops#request('${denops.name}', 'viewIssue', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "?",
+          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issue-detail'])<CR>`,
           { mode: "n", buffer: true }
         );
       } catch (error) {
@@ -589,6 +627,72 @@ export async function main(denops: Denops): Promise<void> {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to edit issue: ${message}`);
       }
+    },
+
+    /**
+     * Show help for keyboard shortcuts
+     * @param context - Context: 'projects', 'issues', 'issue-detail'
+     */
+    async showHelp(context: unknown): Promise<void> {
+      const helpText: Record<string, string[]> = {
+        projects: [
+          "GitXab.vim - Project List Help",
+          "=" .repeat(60),
+          "",
+          "Keyboard Shortcuts:",
+          "  <Enter>  - Open project menu (View Issues / Create Issue)",
+          "  q        - Close buffer",
+          "  ?        - Show this help",
+          "",
+          "Project Menu Options:",
+          "  1. View Issues - Display issues for this project",
+          "  2. Create New Issue - Create a new issue",
+          "  3. View Merge Requests - (Coming Soon)",
+        ],
+        issues: [
+          "GitXab.vim - Issue List Help",
+          "=" .repeat(60),
+          "",
+          "Keyboard Shortcuts:",
+          "  <Enter>  - View issue details and comments",
+          "  n        - Create new issue",
+          "  r        - Refresh issue list",
+          "  q        - Close buffer",
+          "  ?        - Show this help",
+          "",
+          "Issue Format:",
+          "  #IID Title [labels] @assignee date",
+        ],
+        "issue-detail": [
+          "GitXab.vim - Issue Detail Help",
+          "=" .repeat(60),
+          "",
+          "Keyboard Shortcuts:",
+          "  c  - Add comment to this issue",
+          "  e  - Edit issue (title/description/labels/state)",
+          "  r  - Refresh issue view",
+          "  q  - Close buffer",
+          "  ?  - Show this help",
+          "",
+          "Edit Menu Options:",
+          "  1. Edit Title - Change issue title",
+          "  2. Edit Description - Change issue description",
+          "  3. Edit Labels - Modify labels (comma-separated)",
+          "  4. Close Issue - Mark issue as closed",
+          "  5. Reopen Issue - Reopen a closed issue",
+        ],
+      };
+      
+      const ctx = typeof context === "string" ? context : "projects";
+      const lines = helpText[ctx] || helpText.projects;
+      
+      // Display help using echo commands
+      await denops.cmd('echo ""');
+      for (const line of lines) {
+        const escapedLine = line.replace(/'/g, "''");
+        await denops.cmd(`echo '${escapedLine}'`);
+      }
+      await denops.cmd('echo ""');
     },
 
     /**
