@@ -11,7 +11,12 @@ import type { Denops } from "https://deno.land/x/denops_std@v6.0.1/mod.ts";
 import * as buffer from "https://deno.land/x/denops_std@v6.0.1/buffer/mod.ts";
 import * as fn from "https://deno.land/x/denops_std@v6.0.1/function/mod.ts";
 import * as vars from "https://deno.land/x/denops_std@v6.0.1/variable/mod.ts";
-import { listProjects, type Project } from "../../deno-backend/mod.ts";
+import { 
+  listProjects, 
+  listIssues as apiListIssues, 
+  type Project, 
+  type Issue 
+} from "../../deno-backend/mod.ts";
 
 export async function main(denops: Denops): Promise<void> {
   // Register plugin dispatcher functions
@@ -69,6 +74,99 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
+     * List issues for a project
+     * @param projectId - GitLab project ID
+     * @param state - Filter by state (opened, closed, all)
+     */
+    async listIssues(projectId: unknown, state?: unknown): Promise<unknown> {
+      try {
+        if (typeof projectId !== "number" && typeof projectId !== "string") {
+          throw new Error("Project ID is required");
+        }
+        
+        const pid = typeof projectId === "string" ? parseInt(projectId, 10) : projectId;
+        if (isNaN(pid)) {
+          throw new Error("Invalid project ID");
+        }
+        
+        const stateFilter = (state === "opened" || state === "closed" || state === "all") 
+          ? state 
+          : undefined;
+        
+        const issues = await apiListIssues(pid, stateFilter);
+        
+        if (!Array.isArray(issues)) {
+          throw new Error("API returned unexpected format for issues");
+        }
+        
+        if (issues.length === 0) {
+          await denops.cmd('echohl WarningMsg | echo "No issues found" | echohl None');
+          return [];
+        }
+        
+        // Create a new buffer for displaying issues
+        await denops.cmd("new");
+        const bufnr = await fn.bufnr(denops, "%");
+        
+        // Format issues for display
+        const lines: string[] = [
+          `Project: #${pid} (${issues.length} issues)`,
+          "=" .repeat(80),
+          "",
+        ];
+        
+        // Group by state
+        const openIssues = issues.filter(i => i.state === "opened");
+        const closedIssues = issues.filter(i => i.state === "closed");
+        
+        if (openIssues.length > 0) {
+          lines.push("Open Issues:");
+          lines.push("-".repeat(80));
+          for (const issue of openIssues) {
+            const assignee = issue.assignee?.username || issue.assignees?.[0]?.username || "unassigned";
+            const labels = issue.labels && issue.labels.length > 0 
+              ? `[${issue.labels.join(", ")}]` 
+              : "";
+            const date = new Date(issue.created_at).toLocaleDateString();
+            lines.push(`#${issue.iid} ${issue.title} ${labels} @${assignee} ${date}`);
+          }
+          lines.push("");
+        }
+        
+        if (closedIssues.length > 0) {
+          lines.push("Closed Issues:");
+          lines.push("-".repeat(80));
+          for (const issue of closedIssues) {
+            const assignee = issue.assignee?.username || issue.assignees?.[0]?.username || "unassigned";
+            const labels = issue.labels && issue.labels.length > 0 
+              ? `[${issue.labels.join(", ")}]` 
+              : "";
+            const date = new Date(issue.updated_at).toLocaleDateString();
+            lines.push(`#${issue.iid} ${issue.title} ${labels} @${assignee} ${date}`);
+          }
+          lines.push("");
+        }
+        
+        // Set buffer content
+        await buffer.ensure(denops, bufnr, async () => {
+          await buffer.replace(denops, bufnr, lines);
+        });
+        
+        // Set buffer options
+        await vars.b.set(denops, "buftype", "nofile");
+        await vars.b.set(denops, "bufhidden", "wipe");
+        await vars.b.set(denops, "modifiable", false);
+        await vars.b.set(denops, "filetype", "gitxab-issues");
+        
+        return issues;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to list issues: ${message}`);
+        throw error;
+      }
+    },
+
+    /**
      * Get issue details
      * @param projectId - GitLab project ID
      * @param issueIid - Issue IID
@@ -96,7 +194,7 @@ export async function main(denops: Denops): Promise<void> {
   );
   
   await denops.cmd(
-    `command! -nargs=* GitXabIssues call denops#request('${denops.name}', 'getIssue', [<f-args>])`
+    `command! -nargs=+ GitXabIssues call denops#request('${denops.name}', 'listIssues', [<f-args>])`
   );
   
   await denops.cmd(

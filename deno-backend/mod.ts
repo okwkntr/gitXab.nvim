@@ -12,6 +12,7 @@
 // GitLab API client functions
 export {
   listProjects,
+  listIssues,
   getIssue,
   listMergeRequests,
 } from "./src/services/gitlab_client.ts";
@@ -39,17 +40,27 @@ export type Project = {
 export type Issue = {
   id: number;
   iid: number;
+  project_id: number;
   title: string;
   description: string;
   state: string;
-  author?: {
+  created_at: string;
+  updated_at: string;
+  author: {
+    id: number;
     name: string;
     username: string;
   };
   assignee?: {
+    id: number;
     name: string;
     username: string;
   };
+  assignees?: Array<{
+    id: number;
+    name: string;
+    username: string;
+  }>;
   labels?: string[];
   web_url?: string;
 };

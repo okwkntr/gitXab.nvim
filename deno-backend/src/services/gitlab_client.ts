@@ -100,6 +100,12 @@ export async function listProjects(q?: string) {
   return await requestGet('/projects', params);
 }
 
+export async function listIssues(projectId: number, state?: 'opened' | 'closed' | 'all') {
+  const params: Record<string, string | number> = {};
+  if (state) params.state = state;
+  return await requestGet(`/projects/${projectId}/issues`, params);
+}
+
 export async function getIssue(projectId: number, issueIid: number) {
   return await requestGet(`/projects/${projectId}/issues/${issueIid}`);
 }

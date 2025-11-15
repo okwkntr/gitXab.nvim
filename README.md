@@ -148,16 +148,48 @@ my-project - My awesome project
 team-repo - Team collaboration repository
 ```
 
-#### List Issues (Coming Soon)
+#### List Issues
 
 ```vim
-:GitXabIssues
+" List all issues for a project
+:GitXabIssues <projectId>
+
+" List only open issues
+:GitXabIssues <projectId> opened
+
+" List only closed issues
+:GitXabIssues <projectId> closed
+
+" List all issues (explicitly)
+:GitXabIssues <projectId> all
 ```
+
+Example output:
+```
+Project: #12345 (15 issues)
+================================================================================
+
+Open Issues:
+--------------------------------------------------------------------------------
+#42 Fix authentication bug [bug, priority:high] @username 2025/11/10
+#38 Add dark mode support [enhancement] @designer 2025/11/08
+#35 Update documentation [docs] unassigned 2025/11/05
+
+Closed Issues:
+--------------------------------------------------------------------------------
+#40 Refactor database queries [refactor] @developer 2025/11/12
+#37 Fix typo in README [docs] @contributor 2025/11/09
+```
+
+To get the project ID:
+1. Run `:GitXabProjects` to list your projects
+2. Check the project's GitLab URL (e.g., `https://gitlab.com/user/project` - the ID is visible in project settings)
+3. Or use the GitLab API browser to find project IDs
 
 #### List Merge Requests (Coming Soon)
 
 ```vim
-:GitXabMRs
+:GitXabMRs <projectId>
 ```
 
 #### Keyboard Shortcuts (Planned)
