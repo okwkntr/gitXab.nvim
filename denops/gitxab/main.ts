@@ -11,12 +11,16 @@ import type { Denops } from "https://deno.land/x/denops_std@v6.0.1/mod.ts";
 import * as buffer from "https://deno.land/x/denops_std@v6.0.1/buffer/mod.ts";
 import * as fn from "https://deno.land/x/denops_std@v6.0.1/function/mod.ts";
 import * as vars from "https://deno.land/x/denops_std@v6.0.1/variable/mod.ts";
+import * as mapping from "https://deno.land/x/denops_std@v6.0.1/mapping/mod.ts";
 import { 
   listProjects, 
   listIssues as apiListIssues, 
   type Project, 
   type Issue 
 } from "../../deno-backend/mod.ts";
+
+// Store project data for interactive navigation
+const projectDataMap = new Map<number, Project[]>();
 
 export async function main(denops: Denops): Promise<void> {
   // Register plugin dispatcher functions
@@ -52,6 +56,9 @@ export async function main(denops: Denops): Promise<void> {
         await denops.cmd("new");
         const bufnr = await fn.bufnr(denops, "%");
         
+        // Store project data for this buffer
+        projectDataMap.set(bufnr, projects);
+        
         // Set buffer options
         await buffer.ensure(denops, bufnr, async () => {
           await buffer.replace(denops, bufnr, 
@@ -65,11 +72,70 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "modifiable", false);
         await vars.b.set(denops, "filetype", "gitxab-projects");
         
+        // Set up key mappings for interactive navigation
+        await mapping.map(
+          denops,
+          "<CR>",
+          `<Cmd>call denops#request('${denops.name}', 'openProjectMenu', [bufnr('%')])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "q",
+          "<Cmd>close<CR>",
+          { mode: "n", buffer: true }
+        );
+        
         return projects;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to list projects: ${message}`);
         throw error;
+      }
+    },
+
+    /**
+     * Open project menu to select action (issues, MRs, etc.)
+     * @param bufnr - Buffer number of project list
+     */
+    async openProjectMenu(bufnr: unknown): Promise<void> {
+      try {
+        if (typeof bufnr !== "number") {
+          throw new Error("Invalid buffer number");
+        }
+        
+        // Get current line number
+        const line = await fn.line(denops, ".") as number;
+        
+        // Get project data for this buffer
+        const projects = projectDataMap.get(bufnr);
+        if (!projects || line < 1 || line > projects.length) {
+          await denops.call("nvim_err_writeln", "GitXab: No project data found");
+          return;
+        }
+        
+        const project = projects[line - 1];
+        
+        // Show menu using inputlist
+        const choices = [
+          `Project: ${project.name} (ID: ${project.id})`,
+          "1. View Issues",
+          "2. View Merge Requests (Coming Soon)",
+          "3. Cancel",
+        ];
+        
+        const choice = await denops.call("inputlist", choices) as number;
+        
+        if (choice === 1) {
+          // View issues
+          await denops.dispatcher.listIssues(project.id);
+        } else if (choice === 2) {
+          await denops.cmd('echohl WarningMsg | echo "Merge Requests feature coming soon" | echohl None');
+        }
+        // choice === 3 or 0 (ESC) - do nothing
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to open project menu: ${message}`);
       }
     },
 
@@ -157,6 +223,20 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "bufhidden", "wipe");
         await vars.b.set(denops, "modifiable", false);
         await vars.b.set(denops, "filetype", "gitxab-issues");
+        
+        // Set up key mappings
+        await mapping.map(
+          denops,
+          "q",
+          "<Cmd>close<CR>",
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "r",
+          `<Cmd>call denops#request('${denops.name}', 'listIssues', [${pid}, '${stateFilter || ""}'])<CR>`,
+          { mode: "n", buffer: true }
+        );
         
         return issues;
       } catch (error) {

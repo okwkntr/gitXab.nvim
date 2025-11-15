@@ -141,6 +141,11 @@ This will:
 - Fetch projects from GitLab API
 - Open a split window showing your projects
 
+**Interactive Navigation:**
+- Press `<Enter>` on any project to open a menu
+- Select "View Issues" to see issues for that project
+- Press `q` to close the buffer
+
 Example output:
 ```
 gitxab - Neovim GitLab plugin
@@ -181,9 +186,13 @@ Closed Issues:
 #37 Fix typo in README [docs] @contributor 2025/11/09
 ```
 
+**Interactive Navigation:**
+- Press `q` to close the buffer
+- Press `r` to refresh the issue list
+
 To get the project ID:
-1. Run `:GitXabProjects` to list your projects
-2. Check the project's GitLab URL (e.g., `https://gitlab.com/user/project` - the ID is visible in project settings)
+1. Run `:GitXabProjects` and press `<Enter>` on any project
+2. Or check the project's GitLab URL (the ID is visible in project settings)
 3. Or use the GitLab API browser to find project IDs
 
 #### List Merge Requests (Coming Soon)
@@ -192,13 +201,15 @@ To get the project ID:
 :GitXabMRs <projectId>
 ```
 
-#### Keyboard Shortcuts (Planned)
+#### Keyboard Shortcuts
 
-In project/issue/MR list buffers:
-- `<CR>` (Enter) - Open details
-- `i` - Show issues for selected project
-- `m` - Show merge requests for selected project
+**Project List Buffer** (`:GitXabProjects`):
+- `<Enter>` - Open project menu (select Issues/MRs)
 - `q` - Close buffer
+
+**Issue List Buffer** (`:GitXabIssues`):
+- `q` - Close buffer
+- `r` - Refresh issue list
 
 #### Troubleshooting
 
