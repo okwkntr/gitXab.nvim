@@ -14,7 +14,13 @@ export {
   listProjects,
   listIssues,
   getIssue,
+  createIssue,
+  updateIssue,
+  getIssueNotes,
+  createIssueNote,
   listMergeRequests,
+  type CreateIssueParams,
+  type UpdateIssueParams,
 } from "./src/services/gitlab_client.ts";
 
 // Authentication management
@@ -63,6 +69,21 @@ export type Issue = {
   }>;
   labels?: string[];
   web_url?: string;
+};
+
+export type IssueNote = {
+  id: number;
+  body: string;
+  author: {
+    id: number;
+    name: string;
+    username: string;
+  };
+  created_at: string;
+  updated_at: string;
+  system: boolean;
+  noteable_id: number;
+  noteable_type: string;
 };
 
 export type MergeRequest = {
