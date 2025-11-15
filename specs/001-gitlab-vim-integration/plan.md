@@ -7,14 +7,22 @@
 
 ## Summary
 
-実装はフロントエンドをNeovimのLuaで、バックエンドはDeno/TypeScriptで分離したアーキテクチャを採用する。
-フロントはNeovimのバッファ/コマンド/KVマッピングを担当し、バックエンドはGitLab APIとの通信、認証、キャッシュ、差分解析を担当する。
-プロセス間通信はUnix Domain Socket（非対応環境ではTCP）で行い、JSONベースの双方向メッセージプロトコルを用いる。
+実装はフロントエンドをdenopsプラグイン（TypeScript/Deno）で、バックエンドはGitLab APIクライアントライブラリ（TypeScript/Deno）として構築する。
+フロントエンドはdenops.vimを通じてNeovimと統合し、バッファ管理、コマンド登録、UI操作を担当する。
+バックエンドライブラリはGitLab APIとの通信、認証、ETagベースキャッシュを提供し、denopsプラグインとCLIの両方から直接インポートして利用する。
 
-バックエンド側の GitLab 呼び出しロジックはライブラリ化された関数群として実装し、同じ関数をサービス（IPC）と CLI の両方から再利用する設計とする。
-これにより、デバッグや自動化（CI/CD）で CLI を使って同じロジックを呼べるようになり、コード重複を避けてテストしやすくする。
+**Phase 1のアーキテクチャ（推奨・実装対象）：**
+- denopsプラグイン（`denops/gitxab/main.ts`）がバックエンドライブラリ（`deno-backend/mod.ts`）を直接インポート
+- ユーザーはNeovimを起動するだけで、denops.vimが自動的にDenoプロセスを管理
+- 別途バックエンドサーバーを起動する必要がない
+- CLIは同じライブラリを直接インポートして利用
 
-CLI の提供例: `deno-backend/cli.ts` にて `list-projects`, `get-issue`, `list-mrs` などのサブコマンドを公開し、JSON を stdout に出力するインターフェースを備える。
+**Phase 2（後方互換・オプション）：**
+- 既存のIPCサーバーモード（`deno-backend/src/server.ts`）を保持
+- Lua IPCクライアント（`lua/gitxab/`）も維持
+- denopsが使えない環境やパフォーマンス要求が高い場合の代替手段として提供
+
+CLI の提供: `deno-backend/cli.ts` にて `list-projects`, `get-issue`, `list-mrs` などのサブコマンドを公開し、JSON を stdout に出力。自動化やデバッグ、CI/CDから直接利用可能。
 
 ## Technical Context
 
