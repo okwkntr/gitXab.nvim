@@ -240,10 +240,18 @@ All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitX
 
 **Issue Detail Buffer**:
 - `c` - Add comment
+- `R` - Reply to a specific comment (by number)
 - `e` - Edit issue (title/description/labels/state) with current values pre-filled
 - `r` - Refresh issue view (reuses existing buffer)
 - `q` - Close buffer
 - `?` - Show help
+
+**Replying to Discussions**:
+1. Discussion threads are numbered `[1]`, `[2]`, `[3]`... in the issue detail view
+2. Press `R` to reply to a discussion thread
+3. Enter the discussion number (e.g., `2` for `[2]`)
+4. Enter your reply text
+5. The reply will be added to the existing discussion thread using GitLab's Discussion API
 
 **Editing Issues**:
 - **Title & Labels**: Current values are pre-filled in the input prompt

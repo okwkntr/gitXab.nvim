@@ -175,6 +175,15 @@ export async function createIssueNote(projectId: number, issueIid: number, body:
   return await requestPost(`/projects/${projectId}/issues/${issueIid}/notes`, { body });
 }
 
+// Discussion API
+export async function getIssueDiscussions(projectId: number, issueIid: number) {
+  return await requestGet(`/projects/${projectId}/issues/${issueIid}/discussions`);
+}
+
+export async function addNoteToDiscussion(projectId: number, issueIid: number, discussionId: string, body: string) {
+  return await requestPost(`/projects/${projectId}/issues/${issueIid}/discussions/${discussionId}/notes`, { body });
+}
+
 export async function listMergeRequests(projectId: number) {
   return await requestGet(`/projects/${projectId}/merge_requests`, { project_id: projectId });
 }

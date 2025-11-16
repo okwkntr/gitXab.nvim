@@ -197,6 +197,7 @@ Deno.test("dispatcher has all expected functions", async () => {
     "viewIssue",
     "createIssue",
     "addComment",
+    "replyToComment",
     "editIssue",
     "showHelp",
     "listMergeRequests",

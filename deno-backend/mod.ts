@@ -18,6 +18,8 @@ export {
   updateIssue,
   getIssueNotes,
   createIssueNote,
+  getIssueDiscussions,
+  addNoteToDiscussion,
   listMergeRequests,
   type CreateIssueParams,
   type UpdateIssueParams,

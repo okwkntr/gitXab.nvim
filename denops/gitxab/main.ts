@@ -20,12 +20,38 @@ import {
   updateIssue as apiUpdateIssue,
   getIssueNotes as apiGetIssueNotes,
   createIssueNote as apiCreateIssueNote,
+  getIssueDiscussions as apiGetIssueDiscussions,
+  addNoteToDiscussion as apiAddNoteToDiscussion,
   type Project, 
   type Issue,
   type IssueNote,
   type CreateIssueParams,
   type UpdateIssueParams 
 } from "../../deno-backend/mod.ts";
+
+// Discussion types
+interface DiscussionNote {
+  id: number;
+  type: string | null;
+  body: string;
+  author: {
+    id: number;
+    username: string;
+    name: string;
+  };
+  created_at: string;
+  updated_at: string;
+  system: boolean;
+  noteable_id: number;
+  noteable_type: string;
+  noteable_iid: number | null;
+}
+
+interface Discussion {
+  id: string;
+  individual_note: boolean;
+  notes: DiscussionNote[];
+}
 
 // Store project data for interactive navigation
 const projectDataMap = new Map<number, Project[]>();
@@ -193,27 +219,25 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "modifiable", false);
         await vars.b.set(denops, "filetype", "gitxab-projects");
         
-        // Set up key mappings for interactive navigation (only for new buffers)
-        if (isNew) {
-          await mapping.map(
-            denops,
-            "<CR>",
-            `<Cmd>call denops#request('${denops.name}', 'openProjectMenu', [bufnr('%')])<CR>`,
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "q",
-            "<Cmd>close<CR>",
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "?",
-            `<Cmd>call denops#request('${denops.name}', 'showHelp', ['projects'])<CR>`,
-            { mode: "n", buffer: true }
-          );
-        }
+        // Set up key mappings for interactive navigation
+        await mapping.map(
+          denops,
+          "<CR>",
+          `<Cmd>call denops#request('${denops.name}', 'openProjectMenu', [bufnr('%')])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "q",
+          "<Cmd>close<CR>",
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "?",
+          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['projects'])<CR>`,
+          { mode: "n", buffer: true }
+        );
         
         return projects;
       } catch (error) {
@@ -373,39 +397,37 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "modifiable", false);
         await vars.b.set(denops, "filetype", "gitxab-issues");
         
-        // Set up key mappings (only for new buffers)
-        if (isNew) {
-          await mapping.map(
-            denops,
-            "<CR>",
-            `<Cmd>call denops#request('${denops.name}', 'openIssueDetail', [bufnr('%'), ${pid}])<CR>`,
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "q",
-            "<Cmd>close<CR>",
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "r",
-            `<Cmd>call denops#request('${denops.name}', 'listIssues', [${pid}, '${stateFilter || ""}'])<CR>`,
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "n",
-            `<Cmd>call denops#request('${denops.name}', 'createIssue', [${pid}])<CR>`,
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "?",
-            `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issues'])<CR>`,
-            { mode: "n", buffer: true }
-          );
-        }
+        // Set up key mappings
+        await mapping.map(
+          denops,
+          "<CR>",
+          `<Cmd>call denops#request('${denops.name}', 'openIssueDetail', [bufnr('%'), ${pid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "q",
+          "<Cmd>close<CR>",
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "r",
+          `<Cmd>call denops#request('${denops.name}', 'listIssues', [${pid}, '${stateFilter || ""}'])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "n",
+          `<Cmd>call denops#request('${denops.name}', 'createIssue', [${pid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "?",
+          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issues'])<CR>`,
+          { mode: "n", buffer: true }
+        );
         
         return issues;
       } catch (error) {
@@ -526,11 +548,11 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Invalid project ID or issue IID");
         }
         
-        // Fetch issue details and comments
+        // Fetch issue details and discussions
         await denops.cmd('echo "Loading issue..."');
-        const [issue, notes] = await Promise.all([
+        const [issue, discussions] = await Promise.all([
           apiGetIssue(pid, iid),
-          apiGetIssueNotes(pid, iid),
+          apiGetIssueDiscussions(pid, iid),
         ]);
         
         // Find or create buffer for displaying issue details
@@ -544,7 +566,7 @@ export async function main(denops: Denops): Promise<void> {
         const lines: string[] = [
           `GitLab Issue #${issue.iid}: ${issue.title}`,
           "=" .repeat(80),
-          "Keys: c=Comment  e=Edit  r=Refresh  q=Close  ?=Help",
+          "Keys: c=Comment  R=Reply  e=Edit  r=Refresh  q=Close  ?=Help",
           "=" .repeat(80),
           `Project: #${pid}`,
           `State: ${issue.state}`,
@@ -575,20 +597,37 @@ export async function main(denops: Denops): Promise<void> {
           lines.push("(no description)");
         }
         
-        // Add comments
-        const userNotes = notes.filter((n: IssueNote) => !n.system);
-        if (userNotes.length > 0) {
+        // Add discussions with numbering
+        // Filter to only include discussions with user comments (not system notes)
+        // Include both individual notes and discussion threads
+        const userDiscussions = discussions.filter((d: Discussion) => 
+          d.notes.some((n: DiscussionNote) => !n.system)
+        );
+        
+        if (userDiscussions.length > 0) {
           lines.push("");
-          lines.push(`Comments (${userNotes.length}):`);
+          lines.push(`Discussions (${userDiscussions.length}):`);
           lines.push("=" .repeat(80));
           
-          for (const note of userNotes) {
+          for (let i = 0; i < userDiscussions.length; i++) {
+            const discussion = userDiscussions[i];
+            const discussionType = discussion.individual_note ? "Comment" : "Thread";
             lines.push("");
-            lines.push(`@${note.author.username} - ${new Date(note.created_at).toLocaleString()}`);
-            lines.push("-".repeat(80));
-            lines.push(...note.body.split("\n"));
+            lines.push(`[${i + 1}] ${discussionType} - Discussion ID: ${discussion.id}`);
+            
+            // Display all notes in this discussion
+            for (const note of discussion.notes) {
+              if (note.system) continue; // Skip system notes
+              lines.push("");
+              lines.push(`  @${note.author.username} - ${new Date(note.created_at).toLocaleString()}`);
+              lines.push("  " + "-".repeat(78));
+              lines.push(...note.body.split("\n").map((line: string) => `  ${line}`));
+            }
           }
         }
+        
+        // Store discussions data in buffer variable for reply feature
+        await vars.b.set(denops, "gitxab_discussions", userDiscussions);
         
         // Set buffer content
         await buffer.ensure(denops, bufnr, async () => {
@@ -605,39 +644,43 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "gitxab_project_id", pid);
         await vars.b.set(denops, "gitxab_issue_iid", iid);
         
-        // Set up key mappings (only for new buffers)
-        if (isNew) {
-          await mapping.map(
-            denops,
-            "q",
-            "<Cmd>close<CR>",
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "c",
-            `<Cmd>call denops#request('${denops.name}', 'addComment', [${pid}, ${iid}])<CR>`,
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "e",
-            `<Cmd>call denops#request('${denops.name}', 'editIssue', [${pid}, ${iid}])<CR>`,
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "r",
-            `<Cmd>call denops#request('${denops.name}', 'viewIssue', [${pid}, ${iid}])<CR>`,
-            { mode: "n", buffer: true }
-          );
-          await mapping.map(
-            denops,
-            "?",
-            `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issue-detail'])<CR>`,
-            { mode: "n", buffer: true }
-          );
-        }
+        // Set up key mappings
+        await mapping.map(
+          denops,
+          "q",
+          "<Cmd>close<CR>",
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "c",
+          `<Cmd>call denops#request('${denops.name}', 'addComment', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "R",
+          `<Cmd>call denops#request('${denops.name}', 'replyToComment', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "e",
+          `<Cmd>call denops#request('${denops.name}', 'editIssue', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "r",
+          `<Cmd>call denops#request('${denops.name}', 'viewIssue', [${pid}, ${iid}])<CR>`,
+          { mode: "n", buffer: true }
+        );
+        await mapping.map(
+          denops,
+          "?",
+          `<Cmd>call denops#request('${denops.name}', 'showHelp', ['issue-detail'])<CR>`,
+          { mode: "n", buffer: true }
+        );
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to view issue: ${message}`);
@@ -674,6 +717,62 @@ export async function main(denops: Denops): Promise<void> {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to add comment: ${message}`);
+      }
+    },
+
+    /**
+     * Reply to a specific discussion thread
+     * @param projectId - GitLab project ID
+     * @param issueIid - Issue IID
+     */
+    async replyToComment(projectId: unknown, issueIid: unknown): Promise<void> {
+      try {
+        if (typeof projectId !== "number" || typeof issueIid !== "number") {
+          throw new Error("Invalid project ID or issue IID");
+        }
+        
+        // Get stored discussions from buffer
+        const discussions = await fn.getbufvar(denops, "%", "gitxab_discussions") as Discussion[] | string;
+        if (!discussions || typeof discussions === "string" || discussions.length === 0) {
+          await denops.cmd('echohl WarningMsg | echo "No discussions found" | echohl None');
+          return;
+        }
+        
+        // Prompt for discussion number
+        const discussionNumStr = await denops.call("input", `Reply to discussion [1-${discussions.length}]: `) as string;
+        if (!discussionNumStr || discussionNumStr.trim() === "") {
+          await denops.cmd('echohl WarningMsg | echo "Reply cancelled" | echohl None');
+          return;
+        }
+        
+        const discussionNum = parseInt(discussionNumStr.trim(), 10);
+        if (isNaN(discussionNum) || discussionNum < 1 || discussionNum > discussions.length) {
+          await denops.cmd('echohl ErrorMsg | echo "Invalid discussion number" | echohl None');
+          return;
+        }
+        
+        const targetDiscussion = discussions[discussionNum - 1];
+        const firstNote = targetDiscussion.notes[0];
+        
+        // Prompt for reply text
+        const reply = await denops.call("input", `Reply to discussion by @${firstNote.author.username}: `) as string;
+        if (!reply || reply.trim() === "") {
+          await denops.cmd('echohl WarningMsg | echo "Reply cancelled" | echohl None');
+          return;
+        }
+        
+        // Post reply to discussion using Discussion API
+        await denops.cmd('echo "Posting reply to discussion..."');
+        await apiAddNoteToDiscussion(projectId, issueIid, targetDiscussion.id, reply.trim());
+        
+        // Show success message
+        await denops.cmd(`echohl MoreMsg | echo "✓ Reply to discussion ${discussionNum} posted" | echohl None`);
+        
+        // Refresh issue view
+        await denops.dispatcher.viewIssue(projectId, issueIid);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to reply: ${message}`);
       }
     },
 
@@ -1022,10 +1121,16 @@ export async function main(denops: Denops): Promise<void> {
           "",
           "Keyboard Shortcuts:",
           "  c  - Add comment to this issue",
+          "  R  - Reply to a discussion thread (by number)",
           "  e  - Edit issue (title/description/labels/state)",
           "  r  - Refresh issue view",
           "  q  - Close buffer",
           "  ?  - Show this help",
+          "",
+          "Discussion Threads:",
+          "  Discussion threads are numbered [1], [2], [3]...",
+          "  Use 'R' to reply to a discussion thread",
+          "  Replies are added to the existing thread",
           "",
           "Edit Menu Options:",
           "  1. Edit Title - Change issue title",
