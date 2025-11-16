@@ -202,6 +202,8 @@ Deno.test("dispatcher has all expected functions", async () => {
     "showHelp",
     "listMergeRequests",
     "onDescriptionBufferClose",
+    "onCommentBufferSave",
+    "cleanupCommentEdit",
     "cleanupDescriptionEdit",
   ];
   
@@ -209,7 +211,7 @@ Deno.test("dispatcher has all expected functions", async () => {
     assertExists(denops.dispatcher[func], `Dispatcher should have ${func}`);
   }
   
-  console.log(`  ✓ All ${expectedFunctions.length} dispatcher functions exist`);
+  console.log(`✓ All 15 dispatcher functions exist`);
 });
 
 Deno.test("commands are registered", async () => {

@@ -239,19 +239,33 @@ All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitX
 - `?` - Show help
 
 **Issue Detail Buffer**:
-- `c` - Add comment
-- `R` - Reply to a specific comment (by number)
+- `c` - Add comment (opens markdown editor)
+- `R` - Reply to a discussion thread (opens markdown editor)
 - `e` - Edit issue (title/description/labels/state) with current values pre-filled
 - `r` - Refresh issue view (reuses existing buffer)
 - `q` - Close buffer
 - `?` - Show help
 
-**Replying to Discussions**:
-1. Discussion threads are numbered `[1]`, `[2]`, `[3]`... in the issue detail view
-2. Press `R` to reply to a discussion thread
-3. Enter the discussion number (e.g., `2` for `[2]`)
-4. Enter your reply text
-5. The reply will be added to the existing discussion thread using GitLab's Discussion API
+**Adding Comments & Replies**:
+Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
+
+1. **Add Comment (`c`)**:
+   - Opens a markdown editor
+   - Write your comment (multiple lines, markdown supported)
+   - **Save with `:w`** to post the comment (immediately applied to GitLab)
+   - You can save multiple times (each `:w` posts/updates)
+   - Close with `:q` when done (temporary file is cleaned up automatically)
+   - Or close with `:q!` without saving to keep the previous version
+
+2. **Reply to Discussion (`R`)**:
+   - Discussion threads are numbered `[1]`, `[2]`, `[3]`... in the issue detail view
+   - Press `R` and enter the discussion number (e.g., `2`)
+   - Opens a markdown editor with context (shows original discussion)
+   - Write your reply (multiple lines, markdown supported)
+   - **Save with `:w`** to post the reply (immediately applied to GitLab)
+   - Close with `:q` when done (temporary file is cleaned up automatically)
+   - Or close with `:q!` without saving to cancel
+   - The reply will be added to the existing discussion thread
 
 **Editing Issues**:
 - **Title & Labels**: Current values are pre-filled in the input prompt

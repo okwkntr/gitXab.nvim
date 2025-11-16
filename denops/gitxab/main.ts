@@ -698,25 +698,61 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Invalid project ID or issue IID");
         }
         
-        // Prompt for comment
-        const comment = await denops.call("input", "Comment: ") as string;
-        if (!comment || comment.trim() === "") {
-          await denops.cmd('echohl WarningMsg | echo "Comment cancelled" | echohl None');
-          return;
+        // Create temporary file for comment editing
+        let tmpDir = await denops.call("expand", "$TMPDIR") as string;
+        if (!tmpDir || tmpDir === "$TMPDIR") {
+          tmpDir = await denops.call("expand", "$TEMP") as string;
         }
+        if (!tmpDir || tmpDir === "$TEMP") {
+          const tempPath = await fn.tempname(denops) as string;
+          tmpDir = await denops.call("fnamemodify", tempPath, ":h") as string;
+        }
+        const tmpFile = `${tmpDir}/.gitxab_${projectId}_${issueIid}_comment.md`;
         
-        // Post comment
-        await denops.cmd('echo "Posting comment..."');
-        await apiCreateIssueNote(projectId, issueIid, comment.trim());
+        // Set initial content with instructions
+        const instructions = [
+          `" GitXab: Add comment to Issue #${issueIid}`,
+          `" Project ID: ${projectId}, Issue IID: ${issueIid}`,
+          `"`,
+          `" Instructions:`,
+          `"   1. Write your comment below (markdown supported)`,
+          `"   2. Save with :w (or :wq to save and close)`,
+          `"   3. Comment will be posted when you close the buffer`,
+          `"   4. Close without saving (:q!) to cancel`,
+          `"`,
+          `" ========================================`,
+          "",
+        ];
         
-        // Show success message
-        await denops.cmd('echohl MoreMsg | echo "✓ Comment added" | echohl None');
+        // Write to temporary file
+        await denops.call("writefile", instructions, tmpFile);
         
-        // Refresh issue view
-        await denops.dispatcher.viewIssue(projectId, issueIid);
+        // Open file in split window
+        await denops.cmd(`split ${tmpFile}`);
+        const bufnr = await fn.bufnr(denops, "%") as number;
+        
+        // Set buffer options
+        await vars.b.set(denops, "filetype", "markdown");
+        await vars.b.set(denops, "gitxab_project_id", projectId);
+        await vars.b.set(denops, "gitxab_issue_iid", issueIid);
+        await vars.b.set(denops, "gitxab_tmpfile", tmpFile);
+        await vars.b.set(denops, "gitxab_action", "comment");
+        
+        // Move cursor to first content line
+        await denops.cmd(`normal! ${instructions.length + 1}G`);
+        
+        // Set up autocmds - post on save, cleanup on unload
+        const escapedPath = tmpFile.replace(/\\/g, '\\\\').replace(/ /g, '\\ ');
+        await denops.cmd(`augroup GitXabComment`);
+        await denops.cmd(`autocmd! * ${escapedPath}`);
+        await denops.cmd(`autocmd BufWritePost ${escapedPath} call denops#request('${denops.name}', 'onCommentBufferSave', [${bufnr}])`);
+        await denops.cmd(`autocmd BufUnload ${escapedPath} call denops#request('${denops.name}', 'cleanupCommentEdit', ['${tmpFile}'])`);
+        await denops.cmd(`augroup END`);
+        
+        await denops.cmd('echo "Write your comment, :w to post, :q to close"');
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        await denops.call("nvim_err_writeln", `GitXab: Failed to add comment: ${message}`);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to open comment editor: ${message}`);
       }
     },
 
@@ -754,25 +790,74 @@ export async function main(denops: Denops): Promise<void> {
         const targetDiscussion = discussions[discussionNum - 1];
         const firstNote = targetDiscussion.notes[0];
         
-        // Prompt for reply text
-        const reply = await denops.call("input", `Reply to discussion by @${firstNote.author.username}: `) as string;
-        if (!reply || reply.trim() === "") {
-          await denops.cmd('echohl WarningMsg | echo "Reply cancelled" | echohl None');
-          return;
+        // Create temporary file for reply editing
+        let tmpDir = await denops.call("expand", "$TMPDIR") as string;
+        if (!tmpDir || tmpDir === "$TMPDIR") {
+          tmpDir = await denops.call("expand", "$TEMP") as string;
+        }
+        if (!tmpDir || tmpDir === "$TEMP") {
+          const tempPath = await fn.tempname(denops) as string;
+          tmpDir = await denops.call("fnamemodify", tempPath, ":h") as string;
+        }
+        const tmpFile = `${tmpDir}/.gitxab_${projectId}_${issueIid}_reply_${discussionNum}.md`;
+        
+        // Set initial content with instructions and context
+        const instructions = [
+          `" GitXab: Reply to Discussion #${discussionNum} on Issue #${issueIid}`,
+          `" Project ID: ${projectId}, Issue IID: ${issueIid}`,
+          `" Replying to: @${firstNote.author.username}`,
+          `"`,
+          `" Original discussion:`,
+        ];
+        
+        // Add quoted context from the discussion
+        for (const note of targetDiscussion.notes) {
+          instructions.push(`" > @${note.author.username}: ${note.body.split('\n')[0]}`);
         }
         
-        // Post reply to discussion using Discussion API
-        await denops.cmd('echo "Posting reply to discussion..."');
-        await apiAddNoteToDiscussion(projectId, issueIid, targetDiscussion.id, reply.trim());
+        instructions.push(
+          `"`,
+          `" Instructions:`,
+          `"   1. Write your reply below (markdown supported)`,
+          `"   2. Save with :w (or :wq to save and close)`,
+          `"   3. Reply will be posted when you close the buffer`,
+          `"   4. Close without saving (:q!) to cancel`,
+          `"`,
+          `" ========================================`,
+          "",
+        );
         
-        // Show success message
-        await denops.cmd(`echohl MoreMsg | echo "✓ Reply to discussion ${discussionNum} posted" | echohl None`);
+        // Write to temporary file
+        await denops.call("writefile", instructions, tmpFile);
         
-        // Refresh issue view
-        await denops.dispatcher.viewIssue(projectId, issueIid);
+        // Open file in split window
+        await denops.cmd(`split ${tmpFile}`);
+        const bufnr = await fn.bufnr(denops, "%") as number;
+        
+        // Set buffer options and store context
+        await vars.b.set(denops, "filetype", "markdown");
+        await vars.b.set(denops, "gitxab_project_id", projectId);
+        await vars.b.set(denops, "gitxab_issue_iid", issueIid);
+        await vars.b.set(denops, "gitxab_tmpfile", tmpFile);
+        await vars.b.set(denops, "gitxab_action", "reply");
+        await vars.b.set(denops, "gitxab_discussion_id", targetDiscussion.id);
+        await vars.b.set(denops, "gitxab_discussion_num", discussionNum);
+        
+        // Move cursor to first content line
+        await denops.cmd(`normal! ${instructions.length + 1}G`);
+        
+        // Set up autocmds - post on save, cleanup on unload
+        const escapedPath = tmpFile.replace(/\\/g, '\\\\').replace(/ /g, '\\ ');
+        await denops.cmd(`augroup GitXabReply`);
+        await denops.cmd(`autocmd! * ${escapedPath}`);
+        await denops.cmd(`autocmd BufWritePost ${escapedPath} call denops#request('${denops.name}', 'onCommentBufferSave', [${bufnr}])`);
+        await denops.cmd(`autocmd BufUnload ${escapedPath} call denops#request('${denops.name}', 'cleanupCommentEdit', ['${tmpFile}'])`);
+        await denops.cmd(`augroup END`);
+        
+        await denops.cmd('echo "Write your reply, :w to post, :q to close"');
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        await denops.call("nvim_err_writeln", `GitXab: Failed to reply: ${message}`);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to open reply editor: ${message}`);
       }
     },
 
@@ -1004,6 +1089,98 @@ export async function main(denops: Denops): Promise<void> {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to save description: ${message}`);
+      }
+    },
+
+    /**
+     * Handle comment buffer save event (posts comment/reply)
+     * @param bufnr - Buffer number
+     */
+    async onCommentBufferSave(bufnr: unknown): Promise<void> {
+      try {
+        if (typeof bufnr !== "number") return;
+        
+        // Get temp file path and context info
+        const tmpFile = await fn.getbufvar(denops, bufnr, "gitxab_tmpfile") as string;
+        const projectId = await fn.getbufvar(denops, bufnr, "gitxab_project_id") as number;
+        const issueIid = await fn.getbufvar(denops, bufnr, "gitxab_issue_iid") as number;
+        const action = await fn.getbufvar(denops, bufnr, "gitxab_action") as string;
+        const discussionId = await fn.getbufvar(denops, bufnr, "gitxab_discussion_id") as string;
+        const discussionNum = await fn.getbufvar(denops, bufnr, "gitxab_discussion_num") as number;
+        
+        if (!tmpFile || !projectId || !issueIid || !action) {
+          return;
+        }
+        
+        // Check if file exists
+        const fileExists = await fn.filereadable(denops, tmpFile) as number;
+        if (!fileExists) {
+          return;
+        }
+        
+        // Read content from temp file
+        const lines = await denops.call("readfile", tmpFile) as string[];
+        
+        // Find where instructions end
+        let contentStart = 0;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes("========================================")) {
+            contentStart = i + 2;
+            break;
+          }
+        }
+        
+        // Get comment content
+        const contentLines = lines.slice(contentStart);
+        const content = contentLines.join("\n").trim();
+        
+        if (!content) {
+          await denops.cmd('echohl WarningMsg | echo "No content, not posting" | echohl None');
+          return;
+        }
+        
+        // Post comment or reply based on action
+        if (action === "comment") {
+          await denops.cmd('echo "Posting comment..."');
+          await apiCreateIssueNote(projectId, issueIid, content);
+          await denops.cmd('echohl MoreMsg | echo "✓ Comment posted" | echohl None');
+        } else if (action === "reply" && discussionId) {
+          await denops.cmd('echo "Posting reply to discussion..."');
+          await apiAddNoteToDiscussion(projectId, issueIid, discussionId, content);
+          await denops.cmd(`echohl MoreMsg | echo "✓ Reply to discussion ${discussionNum} posted" | echohl None`);
+        }
+        
+        // Refresh issue view
+        await denops.dispatcher.viewIssue(projectId, issueIid);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to post: ${message}`);
+      }
+    },
+
+    /**
+     * Cleanup comment/reply temp file and autocmds when buffer is unloaded
+     */
+    async cleanupCommentEdit(tmpFile: unknown): Promise<void> {
+      try {
+        if (typeof tmpFile !== "string") return;
+        
+        // Clean up temp file
+        const fileExists = await fn.filereadable(denops, tmpFile) as number;
+        if (fileExists) {
+          await denops.call("delete", tmpFile);
+        }
+        
+        // Clean up autocmds for both comment and reply
+        const escapedPath = tmpFile.replace(/\\/g, '\\\\').replace(/ /g, '\\ ');
+        await denops.cmd(`augroup GitXabComment`);
+        await denops.cmd(`autocmd! * ${escapedPath}`);
+        await denops.cmd(`augroup END`);
+        await denops.cmd(`augroup GitXabReply`);
+        await denops.cmd(`autocmd! * ${escapedPath}`);
+        await denops.cmd(`augroup END`);
+      } catch (error) {
+        // Ignore cleanup errors
       }
     },
 
