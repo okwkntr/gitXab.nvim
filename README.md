@@ -6,6 +6,8 @@ Neovim plugin for GitLab integration - Access GitLab features directly from your
 
 - 🔍 Project listing and search
 - 📋 Issue management (list, view, create, edit, comment)
+  - ✨ Pre-filled edit forms with current values
+  - 📝 Multi-line description editor with markdown support
 - 🔀 Merge Request management (list, view, diff, comment)
 - 💬 Inline diff comments
 - 🔄 Smart buffer reuse - No duplicate windows on reload
@@ -238,10 +240,19 @@ All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitX
 
 **Issue Detail Buffer**:
 - `c` - Add comment
-- `e` - Edit issue (title/description/labels/state)
+- `e` - Edit issue (title/description/labels/state) with current values pre-filled
 - `r` - Refresh issue view (reuses existing buffer)
 - `q` - Close buffer
 - `?` - Show help
+
+**Editing Issues**:
+- **Title & Labels**: Current values are pre-filled in the input prompt
+- **Description**: Opens in a markdown buffer editor (temporary file)
+  1. Edit the description (supports multiple lines and markdown)
+  2. Save with `:w` - changes are **immediately** applied to GitLab
+  3. You can save multiple times (each `:w` updates GitLab)
+  4. Close with `:q` when done (temporary file is cleaned up automatically)
+  5. Or close with `:q!` without saving to keep the previous version
 
 **Buffer Reuse**: When you press `r` (refresh) or re-run commands like `:GitXabIssues`, GitXab automatically reuses the existing buffer instead of creating a new window. This keeps your workspace clean and prevents window clutter.
 
@@ -291,8 +302,9 @@ vim.env.GITXAB_DEBUG = "1"
 Debug logs will show:
 - Buffer reuse logic: finding existing buffers, creating new ones
 - Buffer operations: filetype checks, window switching
-- Request: URL, token status, headers
-- Response: Status code, content type, body preview
+- Description editor: temp file paths, autocmd setup, save/update flow
+- API requests: URL, token status, headers
+- API responses: Status code, content type, body preview
 
 **Buffer reuse issues:**
 If windows keep splitting or buffers multiply:

@@ -688,9 +688,13 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Invalid project ID or issue IID");
         }
         
+        // Fetch current issue data
+        await denops.cmd('echo "Loading issue..."');
+        const issue = await apiGetIssue(projectId, issueIid);
+        
         // Show edit menu
         const choices = [
-          `Edit Issue #${issueIid}`,
+          `Edit Issue #${issueIid}: ${issue.title}`,
           "1. Edit Title",
           "2. Edit Description",
           "3. Edit Labels",
@@ -703,24 +707,106 @@ export async function main(denops: Denops): Promise<void> {
         const params: UpdateIssueParams = {};
         
         if (choice === 1) {
-          const title = await denops.call("input", "New title: ") as string;
-          if (title && title.trim()) {
+          // Edit title with current value pre-filled
+          const title = await denops.call("input", "Title: ", issue.title) as string;
+          if (title && title.trim() && title.trim() !== issue.title) {
             params.title = title.trim();
+          } else {
+            await denops.cmd('echo "No changes made"');
+            return;
           }
         } else if (choice === 2) {
-          const description = await denops.call("input", "New description: ") as string;
-          if (description !== null) {
-            params.description = description.trim();
+          // Edit description in a temporary file
+          // Get temp directory - use fnamemodify with :p to get full path
+          let tmpDir = await denops.call("expand", "$TMPDIR") as string;
+          if (!tmpDir || tmpDir === "$TMPDIR") {
+            tmpDir = await denops.call("expand", "$TEMP") as string;
           }
+          if (!tmpDir || tmpDir === "$TEMP") {
+            // Use Vim's tempname() to get a reliable temp directory
+            const tempPath = await fn.tempname(denops) as string;
+            tmpDir = await denops.call("fnamemodify", tempPath, ":h") as string;
+          }
+          const tmpFile = `${tmpDir}/.gitxab_${projectId}_${issueIid}_desc.md`;
+          
+          // Set initial content with instructions
+          const instructions = [
+            `" GitXab: Edit description for Issue #${issueIid}`,
+            `" Project ID: ${projectId}, Issue IID: ${issueIid}`,
+            `" Current title: ${issue.title}`,
+            `"`,
+            `" Instructions:`,
+            `"   1. Edit the description below (markdown supported)`,
+            `"   2. Save with :w (or :wq to save and close)`,
+            `"   3. Changes will be applied automatically when you close the buffer`,
+            `"   4. Close without saving (:q!) to cancel`,
+            `"`,
+            `" ========================================`,
+            "",
+          ];
+          
+          const contentLines = issue.description ? issue.description.split("\n") : [""];
+          const allLines = [...instructions, ...contentLines];
+          
+          // Write to temporary file using vim's writefile
+          await denops.call("writefile", allLines, tmpFile);
+          
+          // Open file in split window
+          await denops.cmd(`split ${tmpFile}`);
+          const bufnr = await fn.bufnr(denops, "%") as number;
+          
+          // Set buffer options
+          await vars.b.set(denops, "filetype", "markdown");
+          
+          // Store project and issue info in buffer variables
+          await vars.b.set(denops, "gitxab_project_id", projectId);
+          await vars.b.set(denops, "gitxab_issue_iid", issueIid);
+          await vars.b.set(denops, "gitxab_tmpfile", tmpFile);
+          
+          // Move cursor to first content line
+          await denops.cmd(`normal! ${instructions.length + 1}G`);
+          
+          // Debug: Show buffer info
+          await denops.cmd(`echo "[GitXab Debug] Setting up autocmds for buffer ${bufnr}, file: ${tmpFile}"`);
+          await denops.cmd(`echo "[GitXab Debug] Buffer vars: projectId=${projectId}, issueIid=${issueIid}"`);
+          
+          // Set up autocmd - update immediately on save
+          const escapedPath = tmpFile.replace(/\\/g, '\\\\').replace(/ /g, '\\ ');
+          await denops.cmd(`augroup GitXabEditDesc`);
+          await denops.cmd(`autocmd! * ${escapedPath}`);
+          await denops.cmd(`autocmd BufWritePost ${escapedPath} echo "✓ Saved, updating GitLab..." | echo "[GitXab Debug] BufWritePost triggered, calling update" | call denops#request('${denops.name}', 'onDescriptionBufferClose', [${bufnr}])`);
+          await denops.cmd(`autocmd BufUnload ${escapedPath} echo "[GitXab Debug] BufUnload - cleaning up" | call denops#request('${denops.name}', 'cleanupDescriptionEdit', ['${tmpFile}'])`);
+          await denops.cmd(`augroup END`);
+          
+          // Verify autocmds were set
+          await denops.cmd(`echo "[GitXab Debug] Autocmds set for file: ${escapedPath}"`);
+          await denops.cmd(`echo "[GitXab Debug] Use :au GitXabEditDesc to verify"`);
+          await denops.cmd('echo "Edit description, save with :w to update GitLab"');
+          return; // Don't proceed with update yet
         } else if (choice === 3) {
-          const labels = await denops.call("input", "Labels (comma-separated): ") as string;
-          if (labels !== null) {
+          // Edit labels with current values pre-filled
+          const currentLabels = Array.isArray(issue.labels) ? issue.labels.join(", ") : "";
+          const labels = await denops.call("input", "Labels (comma-separated): ", currentLabels) as string;
+          if (labels !== null && labels.trim() !== currentLabels) {
             params.labels = labels.trim();
+          } else {
+            await denops.cmd('echo "No changes made"');
+            return;
           }
         } else if (choice === 4) {
-          params.state_event = "close";
+          if (issue.state !== "closed") {
+            params.state_event = "close";
+          } else {
+            await denops.cmd('echo "Issue is already closed"');
+            return;
+          }
         } else if (choice === 5) {
-          params.state_event = "reopen";
+          if (issue.state === "closed") {
+            params.state_event = "reopen";
+          } else {
+            await denops.cmd('echo "Issue is already open"');
+            return;
+          }
         } else {
           return; // Cancel
         }
@@ -741,6 +827,158 @@ export async function main(denops: Denops): Promise<void> {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call("nvim_err_writeln", `GitXab: Failed to edit issue: ${message}`);
+      }
+    },
+
+    /**
+     * Handle description buffer close event
+     * @param bufnr - Buffer number
+     */
+    async onDescriptionBufferClose(bufnr: unknown): Promise<void> {
+      const debug = Deno.env.get("GITXAB_DEBUG") === "1";
+      try {
+        if (typeof bufnr !== "number") {
+          if (debug) await denops.cmd('echo "[GitXab Debug] onDescriptionBufferClose: bufnr is not a number"');
+          return;
+        }
+        
+        if (debug) await denops.cmd(`echo "[GitXab Debug] onDescriptionBufferClose: bufnr=${bufnr}"`);
+        
+        // Get temp file path and project/issue info
+        const tmpFile = await fn.getbufvar(denops, bufnr, "gitxab_tmpfile") as string;
+        const projectId = await fn.getbufvar(denops, bufnr, "gitxab_project_id") as number;
+        const issueIid = await fn.getbufvar(denops, bufnr, "gitxab_issue_iid") as number;
+        
+        if (debug) await denops.cmd(`echo "[GitXab Debug] tmpFile=${tmpFile}, projectId=${projectId}, issueIid=${issueIid}"`);
+        
+        if (!tmpFile || !projectId || !issueIid) {
+          if (debug) await denops.cmd('echo "[GitXab Debug] Missing required variables, exiting"');
+          return;
+        }
+        
+        // Check if file exists and was modified (saved)
+        const fileExists = await fn.filereadable(denops, tmpFile) as number;
+        if (debug) await denops.cmd(`echo "[GitXab Debug] fileExists=${fileExists}"`);
+        if (!fileExists) {
+          // File doesn't exist, likely deleted - no action needed
+          if (debug) await denops.cmd('echo "[GitXab Debug] File does not exist, exiting"');
+          return;
+        }
+        
+        // Note: We don't check modified flag anymore since we update on every save (BufWritePost)
+        // Just proceed with the update
+        
+        // Read content from temp file
+        const lines = await denops.call("readfile", tmpFile) as string[];
+        if (debug) await denops.cmd(`echo "[GitXab Debug] Read ${lines.length} lines from temp file"`);
+        
+        // Find where instructions end (look for the separator line)
+        let contentStart = 0;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes("========================================")) {
+            contentStart = i + 2; // Skip separator and empty line
+            break;
+          }
+        }
+        
+        if (debug) await denops.cmd(`echo "[GitXab Debug] Content starts at line ${contentStart}"`);
+        
+        // Get description content (everything after instructions)
+        const descriptionLines = lines.slice(contentStart);
+        const description = descriptionLines.join("\n").trim();
+        
+        if (debug) await denops.cmd(`echo "[GitXab Debug] Description length: ${description.length} chars"`);
+        
+        // Update issue
+        await denops.cmd('echo "Updating issue..."');
+        if (debug) await denops.cmd(`echo "[GitXab Debug] Calling apiUpdateIssue(${projectId}, ${issueIid}, ...)"`);
+        await apiUpdateIssue(projectId, issueIid, { description });
+        
+        // Show success message
+        await denops.cmd('echohl MoreMsg | echo "✓ Description updated in GitLab" | echohl None');
+        
+        // Note: Cleanup (temp file deletion, autocmd removal) happens in BufUnload via cleanupDescriptionEdit
+        
+        // Refresh issue view if it's open
+        if (debug) await denops.cmd(`echo "[GitXab Debug] Refreshing issue view"`);
+        await denops.dispatcher.viewIssue(projectId, issueIid);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to save description: ${message}`);
+      }
+    },
+
+    /**
+     * Cleanup temp file and autocmds when buffer is unloaded
+     */
+    async cleanupDescriptionEdit(tmpFile: unknown): Promise<void> {
+      const debug = Deno.env.get("GITXAB_DEBUG") === "1";
+      try {
+        if (typeof tmpFile !== "string") return;
+        
+        if (debug) await denops.cmd(`echo "[GitXab Debug] Cleaning up ${tmpFile}"`);
+        
+        // Clean up temp file
+        const fileExists = await fn.filereadable(denops, tmpFile) as number;
+        if (fileExists) {
+          await denops.call("delete", tmpFile);
+          if (debug) await denops.cmd(`echo "[GitXab Debug] Deleted temp file"`);
+        }
+        
+        // Clean up autocmds
+        const escapedPath = tmpFile.replace(/\\/g, '\\\\').replace(/ /g, '\\ ');
+        await denops.cmd(`augroup GitXabEditDesc`);
+        await denops.cmd(`autocmd! * ${escapedPath}`);
+        await denops.cmd(`augroup END`);
+        if (debug) await denops.cmd(`echo "[GitXab Debug] Cleaned up autocmds"`);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    },
+
+    /**
+     * Save edited description from buffer (manual command)
+     * @param projectId - Project ID
+     * @param issueIid - Issue IID
+     */
+    async saveDescription(projectId: unknown, issueIid: unknown): Promise<void> {
+      try {
+        if (typeof projectId !== "number" || typeof issueIid !== "number") {
+          throw new Error("Invalid project ID or issue IID");
+        }
+        
+        // Get current buffer content
+        const bufnr = await fn.bufnr(denops, "%") as number;
+        const lines = await fn.getbufline(denops, bufnr, 1, "$") as string[];
+        
+        // Find where instructions end (look for the separator line)
+        let contentStart = 0;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes("========================================")) {
+            contentStart = i + 2; // Skip separator and empty line
+            break;
+          }
+        }
+        
+        // Get description content (everything after instructions)
+        const descriptionLines = lines.slice(contentStart);
+        const description = descriptionLines.join("\n").trim();
+        
+        // Update issue
+        await denops.cmd('echo "Updating issue..."');
+        await apiUpdateIssue(projectId, issueIid, { description });
+        
+        // Close edit buffer
+        await denops.cmd("bwipeout!");
+        
+        // Show success message
+        await denops.cmd('echohl MoreMsg | echo "✓ Description updated" | echohl None');
+        
+        // Refresh issue view if it's open
+        await denops.dispatcher.viewIssue(projectId, issueIid);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await denops.call("nvim_err_writeln", `GitXab: Failed to save description: ${message}`);
       }
     },
 
@@ -836,6 +1074,10 @@ export async function main(denops: Denops): Promise<void> {
   
   await denops.cmd(
     `command! -nargs=1 GitXabMRs call denops#request('${denops.name}', 'listMergeRequests', [<f-args>])`
+  );
+  
+  await denops.cmd(
+    `command! -nargs=+ GitXabSaveDescription call denops#request('${denops.name}', 'saveDescription', [<f-args>])`
   );
 
   console.log("GitXab plugin initialized with commands");

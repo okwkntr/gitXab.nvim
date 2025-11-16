@@ -200,6 +200,8 @@ Deno.test("dispatcher has all expected functions", async () => {
     "editIssue",
     "showHelp",
     "listMergeRequests",
+    "onDescriptionBufferClose",
+    "cleanupDescriptionEdit",
   ];
   
   for (const func of expectedFunctions) {
@@ -219,13 +221,14 @@ Deno.test("commands are registered", async () => {
   
   // Verify commands were registered
   const commandDefs = commands.filter(cmd => cmd.includes("command!"));
-  assertEquals(commandDefs.length >= 3, true, "Should register at least 3 commands");
+  assertEquals(commandDefs.length >= 4, true, "Should register at least 4 commands");
   
   // Verify specific commands
   const commandText = commands.join(" ");
   assertEquals(commandText.includes("GitXabProjects"), true);
   assertEquals(commandText.includes("GitXabIssues"), true);
   assertEquals(commandText.includes("GitXabCreateIssue"), true);
+  assertEquals(commandText.includes("GitXabSaveDescription"), true);
   
   console.log(`  ✓ ${commandDefs.length} commands registered`);
 });
