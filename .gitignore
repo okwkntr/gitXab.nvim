@@ -1,0 +1,39 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Logs and temp
+*.log
+*.tmp
+*.bak
+
+# Deno
+/deno-backend/.cache
+/deno-backend/.temp
+/deno-backend/deps/**
+
+# Node (if any)
+node_modules/
+dist/
+
+# Docker
+docker-compose.override.yml
+.env
+
+# Build artifacts
+build/
+coverage/
+
+# Misc
+.env*
+*.pem
+*.key
+
+# Neovim state
+swapfile
