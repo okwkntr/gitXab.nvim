@@ -78,6 +78,7 @@ vim.env.GITHUB_TOKEN = 'ghp_your_github_token'
 ```
 
 **トークンの取得:**
+
 1. https://github.com/settings/tokens にアクセス
 2. "Generate new token (classic)" をクリック
 3. スコープを選択: `repo`, `read:user`
@@ -104,6 +105,7 @@ vim.env.GITLAB_TOKEN = 'glpat_your_gitlab_token'
 ```
 
 **トークンの取得:**
+
 1. https://gitlab.com/-/profile/personal_access_tokens にアクセス
 2. "Add new token" をクリック
 3. スコープを選択: `api`, `read_user`, `read_api`
@@ -190,6 +192,7 @@ vim.env.GITLAB_TOKEN = 'glpat_your_gitlab_token'
 ### コマンドが見つからない
 
 denops.vimが正しくインストールされているか確認:
+
 ```vim
 :echo exists('*denops#plugin#load')
 " → 1 が表示されるはずです
@@ -217,13 +220,13 @@ denops.vimが正しくインストールされているか確認:
 
 ## コマンドリファレンス
 
-| コマンド | 説明 |
-|---------|------|
-| `:GitXabSetProvider github\|gitlab` | プロバイダーを切り替え |
-| `:GitXabShowProvider` | 現在のプロバイダーとベースURLを表示 |
-| `:GitXabProjects [検索語]` | プロジェクト/リポジトリ一覧を表示 |
-| `:GitXabIssues <id> [state]` | イシュー一覧を表示 |
-| `:GitXabMRs <id>` | マージリクエスト/プルリクエスト一覧を表示 |
+| コマンド                            | 説明                                      |
+| ----------------------------------- | ----------------------------------------- |
+| `:GitXabSetProvider github\|gitlab` | プロバイダーを切り替え                    |
+| `:GitXabShowProvider`               | 現在のプロバイダーとベースURLを表示       |
+| `:GitXabProjects [検索語]`          | プロジェクト/リポジトリ一覧を表示         |
+| `:GitXabIssues <id> [state]`        | イシュー一覧を表示                        |
+| `:GitXabMRs <id>`                   | マージリクエスト/プルリクエスト一覧を表示 |
 
 ## より詳しい情報
 

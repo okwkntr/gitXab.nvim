@@ -31,9 +31,30 @@ build/
 coverage/
 
 # Misc
-.env*
 *.pem
 *.key
 
+# Environment files (keep sample files)
+.env
+.env.local
+.env.*.local
+!.env.example
+
 # Neovim state
 swapfile
+*~
+
+# Config with tokens
+config.json
+.gitxab/
+
+# Test outputs
+coverage/
+.nyc_output/
+
+# OS additional
+Desktop.ini
+
+# Deno additional
+.deno/
+deno.lock

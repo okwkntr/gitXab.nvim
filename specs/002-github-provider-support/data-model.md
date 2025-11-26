@@ -10,32 +10,32 @@ GitLabとGitHubの両方で使用される統一されたデータモデル。�
 interface Repository {
   // 識別子（GitLab: 数値ID, GitHub: "owner/repo"文字列）
   id: string | number;
-  
+
   // 基本情報
-  name: string;                    // リポジトリ名
-  fullName: string;                // フルネーム（owner/repo形式）
-  description: string | null;      // 説明
-  
+  name: string; // リポジトリ名
+  fullName: string; // フルネーム（owner/repo形式）
+  description: string | null; // 説明
+
   // URL
-  url: string;                     // Web URL
-  apiUrl?: string;                 // API URL（オプション）
-  
+  url: string; // Web URL
+  apiUrl?: string; // API URL（オプション）
+
   // ブランチ
-  defaultBranch: string;           // デフォルトブランch (main/master)
-  
+  defaultBranch: string; // デフォルトブランch (main/master)
+
   // メタデータ
-  provider: 'gitlab' | 'github';   // プロバイダー識別子
-  visibility?: 'public' | 'private' | 'internal'; // 公開設定
-  archived?: boolean;              // アーカイブ済みかどうか
-  
+  provider: "gitlab" | "github"; // プロバイダー識別子
+  visibility?: "public" | "private" | "internal"; // 公開設定
+  archived?: boolean; // アーカイブ済みかどうか
+
   // 統計（オプション）
-  stars?: number;                  // スター数
-  forks?: number;                  // フォーク数
-  openIssues?: number;            // オープンIssue数
-  
+  stars?: number; // スター数
+  forks?: number; // フォーク数
+  openIssues?: number; // オープンIssue数
+
   // タイムスタンプ
-  createdAt?: string;              // 作成日時（ISO 8601）
-  updatedAt?: string;              // 更新日時（ISO 8601）
+  createdAt?: string; // 作成日時（ISO 8601）
+  updatedAt?: string; // 更新日時（ISO 8601）
 }
 ```
 
@@ -44,35 +44,35 @@ interface Repository {
 ```typescript
 interface Issue {
   // 識別子
-  id: string | number;             // 内部ID
-  number: number;                  // Issue番号（GitLab: iid, GitHub: number）
-  
+  id: string | number; // 内部ID
+  number: number; // Issue番号（GitLab: iid, GitHub: number）
+
   // 基本情報
-  title: string;                   // タイトル
-  body: string | null;             // 本文（description）
-  state: 'open' | 'closed';        // 状態
-  
+  title: string; // タイトル
+  body: string | null; // 本文（description）
+  state: "open" | "closed"; // 状態
+
   // ユーザー情報
-  author: User;                    // 作成者
-  assignees?: User[];              // アサイン先（複数可）
-  
+  author: User; // 作成者
+  assignees?: User[]; // アサイン先（複数可）
+
   // 分類
-  labels: string[];                // ラベル
-  milestone?: Milestone | null;    // マイルストーン
-  
+  labels: string[]; // ラベル
+  milestone?: Milestone | null; // マイルストーン
+
   // URL
-  url: string;                     // Web URL
-  
+  url: string; // Web URL
+
   // タイムスタンプ
-  createdAt: string;               // 作成日時（ISO 8601）
-  updatedAt: string;               // 更新日時（ISO 8601）
-  closedAt?: string | null;        // クローズ日時（ISO 8601）
-  
+  createdAt: string; // 作成日時（ISO 8601）
+  updatedAt: string; // 更新日時（ISO 8601）
+  closedAt?: string | null; // クローズ日時（ISO 8601）
+
   // 統計
-  commentCount?: number;           // コメント数
-  
+  commentCount?: number; // コメント数
+
   // メタデータ
-  locked?: boolean;                // ロック済みかどうか
+  locked?: boolean; // ロック済みかどうか
 }
 ```
 
@@ -81,46 +81,46 @@ interface Issue {
 ```typescript
 interface PullRequest {
   // 識別子
-  id: string | number;             // 内部ID
-  number: number;                  // PR/MR番号
-  
+  id: string | number; // 内部ID
+  number: number; // PR/MR番号
+
   // 基本情報
-  title: string;                   // タイトル
-  body: string | null;             // 説明
-  state: 'open' | 'closed' | 'merged'; // 状態
-  draft?: boolean;                 // ドラフトかどうか
-  
+  title: string; // タイトル
+  body: string | null; // 説明
+  state: "open" | "closed" | "merged"; // 状態
+  draft?: boolean; // ドラフトかどうか
+
   // ブランチ情報
-  sourceBranch: string;            // ソースブランチ
-  targetBranch: string;            // ターゲットブランチ
-  
+  sourceBranch: string; // ソースブランチ
+  targetBranch: string; // ターゲットブランチ
+
   // ユーザー情報
-  author: User;                    // 作成者
-  assignees?: User[];              // アサイン先
-  reviewers?: User[];              // レビュワー
-  
+  author: User; // 作成者
+  assignees?: User[]; // アサイン先
+  reviewers?: User[]; // レビュワー
+
   // 分類
-  labels?: string[];               // ラベル
-  milestone?: Milestone | null;    // マイルストーン
-  
+  labels?: string[]; // ラベル
+  milestone?: Milestone | null; // マイルストーン
+
   // URL
-  url: string;                     // Web URL
-  
+  url: string; // Web URL
+
   // タイムスタンプ
-  createdAt: string;               // 作成日時
-  updatedAt: string;               // 更新日時
-  mergedAt?: string | null;        // マージ日時
-  closedAt?: string | null;        // クローズ日時
-  
+  createdAt: string; // 作成日時
+  updatedAt: string; // 更新日時
+  mergedAt?: string | null; // マージ日時
+  closedAt?: string | null; // クローズ日時
+
   // 統計
-  changedFiles?: number;           // 変更ファイル数
-  additions?: number;              // 追加行数
-  deletions?: number;              // 削除行数
-  commentCount?: number;           // コメント数
-  
+  changedFiles?: number; // 変更ファイル数
+  additions?: number; // 追加行数
+  deletions?: number; // 削除行数
+  commentCount?: number; // コメント数
+
   // マージ情報
-  mergeable?: boolean | null;      // マージ可能かどうか
-  mergeableState?: string;         // マージ可能性の詳細状態
+  mergeable?: boolean | null; // マージ可能かどうか
+  mergeableState?: string; // マージ可能性の詳細状態
 }
 ```
 
@@ -129,23 +129,23 @@ interface PullRequest {
 ```typescript
 interface Comment {
   // 識別子
-  id: string | number;             // コメントID
-  
+  id: string | number; // コメントID
+
   // 内容
-  body: string;                    // コメント本文
-  
+  body: string; // コメント本文
+
   // ユーザー情報
-  author: User;                    // 作成者
-  
+  author: User; // 作成者
+
   // タイムスタンプ
-  createdAt: string;               // 作成日時
-  updatedAt: string;               // 更新日時
-  
+  createdAt: string; // 作成日時
+  updatedAt: string; // 更新日時
+
   // URL
-  url?: string;                    // Web URL（オプション）
-  
+  url?: string; // Web URL（オプション）
+
   // メタデータ
-  isSystemGenerated?: boolean;     // システム生成かどうか
+  isSystemGenerated?: boolean; // システム生成かどうか
 }
 ```
 
@@ -154,13 +154,13 @@ interface Comment {
 ```typescript
 interface User {
   // 識別子
-  id: string | number;             // ユーザーID
-  username: string;                // ユーザー名
-  name?: string;                   // 表示名
-  
+  id: string | number; // ユーザーID
+  username: string; // ユーザー名
+  name?: string; // 表示名
+
   // URL
-  avatarUrl?: string;              // アバターURL
-  profileUrl?: string;             // プロフィールURL
+  avatarUrl?: string; // アバターURL
+  profileUrl?: string; // プロフィールURL
 }
 ```
 
@@ -169,16 +169,16 @@ interface User {
 ```typescript
 interface Branch {
   // 基本情報
-  name: string;                    // ブランチ名
-  
+  name: string; // ブランチ名
+
   // コミット情報
   commit?: {
-    sha: string;                   // コミットSHA
-    message?: string;              // コミットメッセージ
+    sha: string; // コミットSHA
+    message?: string; // コミットメッセージ
   };
-  
+
   // 保護設定
-  protected?: boolean;             // 保護ブランチかどうか
+  protected?: boolean; // 保護ブランチかどうか
 }
 ```
 
@@ -187,26 +187,26 @@ interface Branch {
 ```typescript
 interface Diff {
   // ファイル情報
-  files: DiffFile[];               // 変更ファイル一覧
-  
+  files: DiffFile[]; // 変更ファイル一覧
+
   // 統計
-  totalAdditions?: number;         // 合計追加行数
-  totalDeletions?: number;         // 合計削除行数
+  totalAdditions?: number; // 合計追加行数
+  totalDeletions?: number; // 合計削除行数
 }
 
 interface DiffFile {
   // ファイル情報
-  oldPath: string | null;          // 旧パス（削除/リネーム時）
-  newPath: string;                 // 新パス
-  status: 'added' | 'deleted' | 'modified' | 'renamed'; // ステータス
-  
+  oldPath: string | null; // 旧パス（削除/リネーム時）
+  newPath: string; // 新パス
+  status: "added" | "deleted" | "modified" | "renamed"; // ステータス
+
   // 差分
-  patch?: string;                  // Unified diff形式のパッチ
-  
+  patch?: string; // Unified diff形式のパッチ
+
   // 統計
-  additions: number;               // 追加行数
-  deletions: number;               // 削除行数
-  changes: number;                 // 変更行数
+  additions: number; // 追加行数
+  deletions: number; // 削除行数
+  changes: number; // 変更行数
 }
 ```
 
@@ -215,19 +215,19 @@ interface DiffFile {
 ```typescript
 interface Milestone {
   // 識別子
-  id: string | number;             // マイルストーンID
-  number?: number;                 // マイルストーン番号
-  
+  id: string | number; // マイルストーンID
+  number?: number; // マイルストーン番号
+
   // 基本情報
-  title: string;                   // タイトル
-  description?: string | null;     // 説明
-  state: 'open' | 'closed';        // 状態
-  
+  title: string; // タイトル
+  description?: string | null; // 説明
+  state: "open" | "closed"; // 状態
+
   // 期限
-  dueDate?: string | null;         // 期限（ISO 8601）
-  
+  dueDate?: string | null; // 期限（ISO 8601）
+
   // URL
-  url?: string;                    // Web URL
+  url?: string; // Web URL
 }
 ```
 
@@ -245,7 +245,7 @@ function gitlabProjectToRepository(project: GitLabProject): Repository {
     description: project.description,
     url: project.web_url,
     defaultBranch: project.default_branch,
-    provider: 'gitlab',
+    provider: "gitlab",
     visibility: project.visibility,
     stars: project.star_count,
     forks: project.forks_count,
@@ -279,7 +279,7 @@ function gitlabMRToPullRequest(mr: GitLabMergeRequest): PullRequest {
     number: mr.iid,
     title: mr.title,
     body: mr.description,
-    state: mr.state === 'merged' ? 'merged' : mr.state,
+    state: mr.state === "merged" ? "merged" : mr.state,
     draft: mr.draft || mr.work_in_progress,
     sourceBranch: mr.source_branch,
     targetBranch: mr.target_branch,
@@ -299,15 +299,15 @@ function gitlabMRToPullRequest(mr: GitLabMergeRequest): PullRequest {
 // GitHub Repository → Repository
 function githubRepoToRepository(repo: GitHubRepository): Repository {
   return {
-    id: repo.full_name,  // "owner/repo" format
+    id: repo.full_name, // "owner/repo" format
     name: repo.name,
     fullName: repo.full_name,
     description: repo.description,
     url: repo.html_url,
     apiUrl: repo.url,
     defaultBranch: repo.default_branch,
-    provider: 'github',
-    visibility: repo.private ? 'private' : 'public',
+    provider: "github",
+    visibility: repo.private ? "private" : "public",
     archived: repo.archived,
     stars: repo.stargazers_count,
     forks: repo.forks_count,
@@ -327,8 +327,10 @@ function githubIssueToIssue(issue: GitHubIssue): Issue {
     state: issue.state,
     author: githubUserToUser(issue.user),
     assignees: issue.assignees?.map(githubUserToUser),
-    labels: issue.labels.map(l => typeof l === 'string' ? l : l.name),
-    milestone: issue.milestone ? githubMilestoneToMilestone(issue.milestone) : null,
+    labels: issue.labels.map((l) => typeof l === "string" ? l : l.name),
+    milestone: issue.milestone
+      ? githubMilestoneToMilestone(issue.milestone)
+      : null,
     url: issue.html_url,
     createdAt: issue.created_at,
     updatedAt: issue.updated_at,
@@ -345,14 +347,14 @@ function githubPRToPullRequest(pr: GitHubPullRequest): PullRequest {
     number: pr.number,
     title: pr.title,
     body: pr.body,
-    state: pr.merged_at ? 'merged' : pr.state,
+    state: pr.merged_at ? "merged" : pr.state,
     draft: pr.draft,
     sourceBranch: pr.head.ref,
     targetBranch: pr.base.ref,
     author: githubUserToUser(pr.user),
     assignees: pr.assignees?.map(githubUserToUser),
     reviewers: pr.requested_reviewers?.map(githubUserToUser),
-    labels: pr.labels?.map(l => l.name),
+    labels: pr.labels?.map((l) => l.name),
     milestone: pr.milestone ? githubMilestoneToMilestone(pr.milestone) : null,
     url: pr.html_url,
     createdAt: pr.created_at,
@@ -372,16 +374,19 @@ function githubPRToPullRequest(pr: GitHubPullRequest): PullRequest {
 ## リポジトリID形式の違い
 
 ### GitLab
+
 - **形式**: 数値ID（例: `123`, `456789`）
 - **取得**: `project.id`
 - **API使用**: `/projects/123`
 
 ### GitHub
+
 - **形式**: `owner/repo`文字列（例: `"octocat/Hello-World"`）
 - **取得**: `repo.full_name`
 - **API使用**: `/repos/octocat/Hello-World`
 
 ### 統一的な扱い
+
 ```typescript
 type RepositoryId = string | number;
 
@@ -413,4 +418,5 @@ class GitHubProvider {
 ```
 
 ## 変更履歴
+
 - 2025-11-24: 初版作成

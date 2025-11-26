@@ -1,29 +1,29 @@
 /**
  * GitHub Provider Implementation
- * 
+ *
  * Implements the Provider interface for GitHub using the GitHub API client.
- * 
+ *
  * @module
  */
 
 import type {
-  Provider,
-  Repository,
-  Issue,
-  PullRequest,
-  Comment,
   Branch,
-  PullRequestDiff,
+  Comment,
   CreateIssueParams,
-  UpdateIssueParams,
   CreatePullRequestParams,
+  Issue,
+  Provider,
+  PullRequest,
+  PullRequestDiff,
+  Repository,
+  UpdateIssueParams,
 } from "./provider.ts";
 import { GitHubClient } from "../services/github_client.ts";
 import { GitHubConverter } from "./github_converter.ts";
 import type {
   CreateGitHubIssueParams,
-  UpdateGitHubIssueParams,
   CreateGitHubPullRequestParams,
+  UpdateGitHubIssueParams,
 } from "../models/github.ts";
 
 /**
@@ -40,7 +40,7 @@ export interface GitHubProviderConfig {
 export class GitHubProvider implements Provider {
   readonly name = "github" as const;
   readonly baseUrl: string;
-  
+
   private client: GitHubClient;
   private converter: GitHubConverter;
 
@@ -52,18 +52,22 @@ export class GitHubProvider implements Provider {
     });
     this.converter = new GitHubConverter("github");
   }
-  
+
   /**
    * Parse repository ID in "owner/repo" format
    */
-  private parseRepoId(repoId: string | number): { owner: string; repo: string } {
+  private parseRepoId(
+    repoId: string | number,
+  ): { owner: string; repo: string } {
     const id = typeof repoId === "number" ? repoId.toString() : repoId;
     const parts = id.split("/");
-    
+
     if (parts.length < 2) {
-      throw new Error(`Invalid GitHub repository ID format: ${id}. Expected "owner/repo"`);
+      throw new Error(
+        `Invalid GitHub repository ID format: ${id}. Expected "owner/repo"`,
+      );
     }
-    
+
     return {
       owner: parts.slice(0, -1).join("/"),
       repo: parts[parts.length - 1],
@@ -92,10 +96,12 @@ export class GitHubProvider implements Provider {
    */
   async listIssues(
     repoId: string | number,
-    state?: string
+    state?: string,
   ): Promise<Issue[]> {
     const { owner, repo } = this.parseRepoId(repoId);
-    const options = state ? { state: state as "open" | "closed" | "all" } : undefined;
+    const options = state
+      ? { state: state as "open" | "closed" | "all" }
+      : undefined;
     const issues = await this.client.listIssues(owner, repo, options);
     return issues.map((i) => this.converter.convertIssue(i));
   }
@@ -105,7 +111,7 @@ export class GitHubProvider implements Provider {
    */
   async getIssue(
     repoId: string | number,
-    issueNumber: number
+    issueNumber: number,
   ): Promise<Issue> {
     const { owner, repo } = this.parseRepoId(repoId);
     const issue = await this.client.getIssue(owner, repo, issueNumber);
@@ -117,7 +123,7 @@ export class GitHubProvider implements Provider {
    */
   async createIssue(
     repoId: string | number,
-    params: CreateIssueParams
+    params: CreateIssueParams,
   ): Promise<Issue> {
     const { owner, repo } = this.parseRepoId(repoId);
     const githubParams: CreateGitHubIssueParams = {
@@ -126,7 +132,7 @@ export class GitHubProvider implements Provider {
       assignees: params.assignees,
       labels: params.labels,
     };
-    
+
     const issue = await this.client.createIssue(owner, repo, githubParams);
     return this.converter.convertIssue(issue);
   }
@@ -137,7 +143,7 @@ export class GitHubProvider implements Provider {
   async updateIssue(
     repoId: string | number,
     issueNumber: number,
-    params: UpdateIssueParams
+    params: UpdateIssueParams,
   ): Promise<Issue> {
     const { owner, repo } = this.parseRepoId(repoId);
     const githubParams: UpdateGitHubIssueParams = {
@@ -147,8 +153,13 @@ export class GitHubProvider implements Provider {
       assignees: params.assignees,
       labels: params.labels,
     };
-    
-    const issue = await this.client.updateIssue(owner, repo, issueNumber, githubParams);
+
+    const issue = await this.client.updateIssue(
+      owner,
+      repo,
+      issueNumber,
+      githubParams,
+    );
     return this.converter.convertIssue(issue);
   }
 
@@ -157,10 +168,12 @@ export class GitHubProvider implements Provider {
    */
   async listPullRequests(
     repoId: string | number,
-    state?: string
+    state?: string,
   ): Promise<PullRequest[]> {
     const { owner, repo } = this.parseRepoId(repoId);
-    const options = state ? { state: state as "open" | "closed" | "all" } : undefined;
+    const options = state
+      ? { state: state as "open" | "closed" | "all" }
+      : undefined;
     const prs = await this.client.listPullRequests(owner, repo, options);
     return prs.map((pr) => this.converter.convertPullRequest(pr));
   }
@@ -170,7 +183,7 @@ export class GitHubProvider implements Provider {
    */
   async getPullRequest(
     repoId: string | number,
-    prNumber: number
+    prNumber: number,
   ): Promise<PullRequest> {
     const { owner, repo } = this.parseRepoId(repoId);
     const pr = await this.client.getPullRequest(owner, repo, prNumber);
@@ -182,7 +195,7 @@ export class GitHubProvider implements Provider {
    */
   async createPullRequest(
     repoId: string | number,
-    params: CreatePullRequestParams
+    params: CreatePullRequestParams,
   ): Promise<PullRequest> {
     const { owner, repo } = this.parseRepoId(repoId);
     const githubParams: CreateGitHubPullRequestParams = {
@@ -192,7 +205,7 @@ export class GitHubProvider implements Provider {
       base: params.targetBranch,
       draft: params.draft,
     };
-    
+
     const pr = await this.client.createPullRequest(owner, repo, githubParams);
     return this.converter.convertPullRequest(pr);
   }
@@ -203,7 +216,7 @@ export class GitHubProvider implements Provider {
   async updatePullRequest(
     repoId: string | number,
     prNumber: number,
-    params: UpdateIssueParams
+    params: UpdateIssueParams,
   ): Promise<PullRequest> {
     const { owner, repo } = this.parseRepoId(repoId);
     const pr = await this.client.updatePullRequest(owner, repo, prNumber, {
@@ -219,7 +232,7 @@ export class GitHubProvider implements Provider {
    */
   async getComments(
     repoId: string | number,
-    issueNumber: number
+    issueNumber: number,
   ): Promise<Comment[]> {
     const { owner, repo } = this.parseRepoId(repoId);
     const comments = await this.client.listComments(owner, repo, issueNumber);
@@ -232,10 +245,15 @@ export class GitHubProvider implements Provider {
   async createComment(
     repoId: string | number,
     issueNumber: number,
-    body: string
+    body: string,
   ): Promise<Comment> {
     const { owner, repo } = this.parseRepoId(repoId);
-    const comment = await this.client.createComment(owner, repo, issueNumber, body);
+    const comment = await this.client.createComment(
+      owner,
+      repo,
+      issueNumber,
+      body,
+    );
     return this.converter.convertComment(comment);
   }
 
@@ -248,8 +266,8 @@ export class GitHubProvider implements Provider {
       this.client.listBranches(owner, repo),
       this.client.getRepository(owner, repo),
     ]);
-    
-    return branches.map((b) => 
+
+    return branches.map((b) =>
       this.converter.convertBranch(b, repository.default_branch)
     );
   }
@@ -259,7 +277,7 @@ export class GitHubProvider implements Provider {
    */
   async getPullRequestDiff(
     repoId: string | number,
-    prNumber: number
+    prNumber: number,
   ): Promise<PullRequestDiff> {
     const { owner, repo } = this.parseRepoId(repoId);
     const files = await this.client.getPullRequestFiles(owner, repo, prNumber);

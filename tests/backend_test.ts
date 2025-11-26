@@ -1,31 +1,34 @@
 /**
  * Integration tests for GitXab backend with real GitLab instance
  * Run with: deno test --allow-env --allow-read --allow-net --allow-write
- * 
+ *
  * Note: These tests require a GitLab instance (GITLAB_BASE_URL) and valid token (GITLAB_TOKEN).
  * Tests will use whatever projects are available in the configured GitLab instance.
  * For mocked unit tests that don't require GitLab, see backend_mock_test.ts
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { 
-  listProjects, 
-  listIssues, 
-  listBranches,
-  listMergeRequests, 
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
   getMergeRequest,
   getMergeRequestChanges,
   getMergeRequestDiscussions,
-  type Issue, 
-  type Project 
+  type Issue,
+  listBranches,
+  listIssues,
+  listMergeRequests,
+  listProjects,
+  type Project,
 } from "../deno-backend/mod.ts";
 
 Deno.test("listProjects - should return project list from GitLab", async () => {
   const projects = await listProjects();
-  
+
   assertEquals(Array.isArray(projects), true);
   console.log(`  ✓ Returned ${projects.length} projects from GitLab`);
-  
+
   if (projects.length > 0) {
     const project = projects[0] as Project;
     assertExists(project.id);
@@ -37,19 +40,21 @@ Deno.test("listProjects - should return project list from GitLab", async () => {
 
 Deno.test("listIssues - should return issues if project exists", async () => {
   const projects = await listProjects();
-  
+
   if (projects.length === 0) {
     console.log(`  ⚠ No projects available, skipping test`);
     return;
   }
-  
+
   const projectId = projects[0].id;
-  
+
   try {
     const issues = await listIssues(projectId, "opened");
     assertEquals(Array.isArray(issues), true);
-    console.log(`  ✓ Returned ${issues.length} issues for project ${projectId}`);
-    
+    console.log(
+      `  ✓ Returned ${issues.length} issues for project ${projectId}`,
+    );
+
     if (issues.length > 0) {
       const issue: Issue = issues[0];
       assertExists(issue.id);
@@ -67,7 +72,7 @@ Deno.test("listIssues - should return issues if project exists", async () => {
 
 Deno.test("listIssues - should handle invalid project ID", async () => {
   const invalidProjectId = 999999999;
-  
+
   try {
     await listIssues(invalidProjectId, "opened");
     console.log(`  ⚠ Project ${invalidProjectId} might exist or returns empty`);
@@ -80,19 +85,19 @@ Deno.test("listIssues - should handle invalid project ID", async () => {
 
 Deno.test("listMergeRequests - should return MRs if available", async () => {
   const projects = await listProjects();
-  
+
   if (projects.length === 0) {
     console.log(`  ⚠ No projects available, skipping test`);
     return;
   }
-  
+
   const projectId = projects[0].id;
-  
+
   try {
     const mrs = await listMergeRequests(projectId);
     assertEquals(Array.isArray(mrs), true);
     console.log(`  ✓ Returned ${mrs.length} merge requests`);
-    
+
     if (mrs.length > 0) {
       const mr = mrs[0];
       assertExists(mr.id);
@@ -110,25 +115,25 @@ Deno.test("listMergeRequests - should return MRs if available", async () => {
 
 Deno.test("getMergeRequest - should return MR details if available", async () => {
   const projects = await listProjects();
-  
+
   if (projects.length === 0) {
     console.log(`  ⚠ No projects available, skipping test`);
     return;
   }
-  
+
   const projectId = projects[0].id;
-  
+
   try {
     const mrs = await listMergeRequests(projectId);
-    
+
     if (mrs.length === 0) {
       console.log(`  ⚠ No MRs available, skipping test`);
       return;
     }
-    
+
     const mrIid = mrs[0].iid;
     const mr = await getMergeRequest(projectId, mrIid);
-    
+
     assertExists(mr);
     assertEquals(mr.iid, mrIid);
     assertExists(mr.title);
@@ -146,28 +151,28 @@ Deno.test({
   sanitizeResources: false,
   async fn() {
     const projects = await listProjects();
-    
+
     if (projects.length === 0) {
       console.log(`  ⚠ No projects available, skipping test`);
       return;
     }
-    
+
     const projectId = projects[0].id;
-    
+
     try {
       const mrs = await listMergeRequests(projectId);
-      
+
       if (mrs.length === 0) {
         console.log(`  ⚠ No MRs available, skipping test`);
         return;
       }
-      
+
       const mrIid = mrs[0].iid;
       const discussions = await getMergeRequestDiscussions(projectId, mrIid);
-      
+
       assertEquals(Array.isArray(discussions), true);
       console.log(`  ✓ Returned ${discussions.length} discussions`);
-      
+
       if (discussions.length > 0) {
         const discussion = discussions[0];
         assertExists(discussion.id);
@@ -187,30 +192,30 @@ Deno.test({
 
 Deno.test("getMergeRequestChanges - should return MR diffs if available", async () => {
   const projects = await listProjects();
-  
+
   if (projects.length === 0) {
     console.log(`  ⚠ No projects available, skipping test`);
     return;
   }
-  
+
   const projectId = projects[0].id;
-  
+
   try {
     const mrs = await listMergeRequests(projectId);
-    
+
     if (mrs.length === 0) {
       console.log(`  ⚠ No MRs available, skipping test`);
       return;
     }
-    
+
     const mrIid = mrs[0].iid;
     const changes = await getMergeRequestChanges(projectId, mrIid);
-    
+
     assertExists(changes);
     assertExists(changes.changes);
     assertEquals(Array.isArray(changes.changes), true);
     console.log(`  ✓ Returned ${changes.changes.length} changed files`);
-    
+
     if (changes.changes.length > 0) {
       const change = changes.changes[0];
       assertExists(change.old_path);
@@ -228,24 +233,24 @@ Deno.test({
   sanitizeResources: false,
   async fn() {
     const projects = await listProjects();
-    
+
     if (projects.length === 0) {
       console.log(`  ⚠ No projects available, skipping test`);
       return;
     }
-    
+
     const projectId = projects[0].id;
-    
+
     try {
       const branches = await listBranches(projectId);
       assertEquals(Array.isArray(branches), true);
       console.log(`  ✓ Returned ${branches.length} branches`);
-      
+
       if (branches.length > 0) {
         const branch = branches[0];
         assertExists(branch.name);
         console.log(`  ✓ Branch structure validated`);
-        
+
         const defaultBranch = branches.find((b: any) => b.default === true);
         if (defaultBranch) {
           console.log(`    Default branch: ${defaultBranch.name}`);

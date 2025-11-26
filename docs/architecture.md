@@ -4,7 +4,8 @@ This document describes the technical architecture of GitXab.vim.
 
 ## Overview
 
-GitXab.vim uses a modern, efficient architecture that leverages denops.vim for seamless TypeScript integration with Neovim.
+GitXab.vim uses a modern, efficient architecture that leverages denops.vim for
+seamless TypeScript integration with Neovim.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -55,6 +56,7 @@ GitXab.vim uses a modern, efficient architecture that leverages denops.vim for s
 **Location:** `denops/gitxab/main.ts`
 
 **Responsibilities:**
+
 - Register Neovim commands (`:GitXabProjects`, `:GitXabIssues`, etc.)
 - Manage buffer lifecycle and content
 - Render UI elements (lists, forms, diffs)
@@ -62,6 +64,7 @@ GitXab.vim uses a modern, efficient architecture that leverages denops.vim for s
 - Coordinate with backend library
 
 **Key Features:**
+
 - Smart buffer reuse (no duplicate windows)
 - Context-aware keyboard shortcuts
 - Editor-based forms for long text input
@@ -69,6 +72,7 @@ GitXab.vim uses a modern, efficient architecture that leverages denops.vim for s
 - Markdown syntax support
 
 **Technology:**
+
 - TypeScript/Deno
 - denops.vim API for Neovim integration
 - Direct import of backend library functions
@@ -78,6 +82,7 @@ GitXab.vim uses a modern, efficient architecture that leverages denops.vim for s
 **Location:** `deno-backend/mod.ts`
 
 **Responsibilities:**
+
 - GitLab REST API communication
 - Authentication token management
 - HTTP request/response handling
@@ -88,7 +93,9 @@ GitXab.vim uses a modern, efficient architecture that leverages denops.vim for s
 **Key Modules:**
 
 #### `src/services/gitlab_client.ts`
+
 Core API client implementing:
+
 - `listProjects()` - Fetch and search projects
 - `listIssues()` - Fetch project issues
 - `getIssue()` - Fetch issue details
@@ -105,19 +112,24 @@ Core API client implementing:
 - `listBranches()` - Fetch repository branches
 
 #### `src/auth/keyring.ts`
+
 Authentication management:
+
 - Environment variable token storage
 - Configuration file fallback (future)
 - OS keyring integration (future)
 
 #### `src/cache/cache_manager.ts`
+
 ETag-based HTTP caching:
+
 - Stores response ETags
 - Validates cache on requests
 - Refreshes stale entries
 - Reduces API rate limit usage
 
 **Technology:**
+
 - TypeScript/Deno
 - Native Deno HTTP client
 - JSON serialization/deserialization
@@ -125,12 +137,14 @@ ETag-based HTTP caching:
 ### 3. Communication Layer
 
 **denops.vim** automatically manages:
+
 - Neovim ↔ Deno process communication via msgpack-rpc
 - Process lifecycle (auto-start/stop)
 - Message serialization
 - Error propagation
 
 **Benefits:**
+
 - Zero configuration required from users
 - No separate server to manage
 - Efficient binary protocol
@@ -149,6 +163,7 @@ deno run -A deno-backend/cli.ts list-mrs <project_id>
 ```
 
 **Features:**
+
 - JSON output to stdout
 - Uses same backend library as plugin
 - Suitable for CI/CD pipelines
@@ -231,48 +246,56 @@ deno run -A deno-backend/cli.ts list-mrs <project_id>
 ## Technology Stack
 
 ### Frontend
+
 - **Language:** TypeScript 5.x
 - **Runtime:** Deno 1.x
 - **Framework:** denops.vim 5.x+
 - **Editor:** Neovim 0.7+
 
 ### Backend
+
 - **Language:** TypeScript 5.x
 - **Runtime:** Deno 1.x
 - **HTTP Client:** Native Deno fetch API
 - **Caching:** In-memory with ETag support
 
 ### Communication
+
 - **Protocol:** msgpack-rpc (automatic via denops.vim)
 - **Transport:** stdio (denops manages process)
 
 ## Design Principles
 
 ### 1. Simplicity
+
 - No separate server process to manage
 - Single Deno process managed by denops
 - Direct function imports (no IPC overhead)
 - Minimal configuration required
 
 ### 2. Performance
+
 - ETag-based caching reduces API calls
 - Smart buffer reuse eliminates duplicates
 - Async/await for non-blocking operations
 - Efficient msgpack protocol
 
 ### 3. Type Safety
+
 - Full TypeScript throughout stack
 - Strongly typed API responses
 - Compile-time error checking
 - IntelliSense support for development
 
 ### 4. Maintainability
+
 - Shared backend library (plugin + CLI)
 - Clear separation of concerns
 - Modular architecture
 - Comprehensive type definitions
 
 ### 5. User Experience
+
 - Vim-native keyboard shortcuts
 - Context-aware help (`?` key)
 - Editor-based forms for long text
@@ -283,23 +306,27 @@ deno run -A deno-backend/cli.ts list-mrs <project_id>
 ### Phase 1: Direct Integration (Current)
 
 **Pros:**
+
 - Simple deployment (no separate server)
 - Automatic lifecycle management
 - Zero configuration overhead
 - Best performance (no IPC)
 
 **Cons:**
+
 - Requires denops.vim
 - Requires Neovim 0.7+
 
 ### Phase 2: IPC Server (Legacy/Optional)
 
 **Pros:**
+
 - Can work with older Vim versions
 - Separate process lifecycle control
 - Shared server for multiple clients
 
 **Cons:**
+
 - More complex deployment
 - Requires manual server management
 - IPC overhead
@@ -310,17 +337,20 @@ deno run -A deno-backend/cli.ts list-mrs <project_id>
 ## Security Considerations
 
 ### Authentication
+
 - Tokens stored in environment variables (recommended)
 - Configuration file support (future)
 - OS keyring integration (future)
 - Never log or expose tokens
 
 ### Network Security
+
 - All API calls use HTTPS
 - SSL/TLS certificate verification
 - Support for custom CA certificates
 
 ### Data Privacy
+
 - No telemetry or analytics
 - No data sent to third parties
 - Cache stored in memory only
@@ -329,18 +359,21 @@ deno run -A deno-backend/cli.ts list-mrs <project_id>
 ## Performance Characteristics
 
 ### Latency
+
 - Command execution: < 100ms (cached)
 - API request: 200-500ms (network dependent)
 - Buffer rendering: < 50ms
 - Target: < 500ms total for any operation
 
 ### Memory Usage
+
 - Base: ~50MB (Deno process)
 - Per buffer: ~1-5MB
 - Cache: ~10MB (typical)
 - Target: < 512MB total
 
 ### Rate Limiting
+
 - GitLab.com: 2000 requests/minute
 - Self-hosted: Configurable
 - Caching significantly reduces requests
@@ -349,6 +382,7 @@ deno run -A deno-backend/cli.ts list-mrs <project_id>
 ## Future Enhancements
 
 ### Planned Features
+
 1. **OS Keyring Integration**
    - Secure token storage
    - Cross-platform support
@@ -377,22 +411,24 @@ deno run -A deno-backend/cli.ts list-mrs <project_id>
 ## Testing Strategy
 
 ### Unit Tests
+
 - Backend API client functions
 - Cache manager logic
 - Authentication handling
 - Response parsing
 
 ### Integration Tests
+
 - Denops command execution
 - Buffer management
 - UI rendering
 - Error handling
 
 ### End-to-End Tests
+
 - Complete user workflows
 - GitLab API integration
 - Performance benchmarks
 - Error scenarios
 
-**Test Runner:** `deno test`
-**Location:** `tests/` directory
+**Test Runner:** `deno test` **Location:** `tests/` directory

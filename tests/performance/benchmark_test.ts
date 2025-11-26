@@ -3,11 +3,7 @@
  * Run with: deno bench --allow-env --allow-read --allow-net tests/performance/
  */
 
-import { 
-  listProjects, 
-  listIssues,
-  getIssue 
-} from "../../deno-backend/mod.ts";
+import { getIssue, listIssues, listProjects } from "../../deno-backend/mod.ts";
 
 const TEST_PROJECT_ID = 278964; // GitLab's own project
 

@@ -1,19 +1,20 @@
 # Performance Guide
 
-This document provides guidelines for performance optimization and monitoring in GitXab.vim.
+This document provides guidelines for performance optimization and monitoring in
+GitXab.vim.
 
 ## Performance Goals
 
 ### Latency Targets
 
-| Operation | Target | Acceptable | Notes |
-|-----------|--------|------------|-------|
-| List projects | < 200ms | < 500ms | Cached after first load |
-| List issues | < 300ms | < 500ms | Cached per project |
-| Get issue detail | < 250ms | < 500ms | Includes comments |
-| List MRs | < 300ms | < 500ms | Cached per project |
-| Create issue/MR | < 1000ms | < 2000ms | Network write operation |
-| View diff | < 500ms | < 1000ms | Large diffs may be slower |
+| Operation        | Target   | Acceptable | Notes                     |
+| ---------------- | -------- | ---------- | ------------------------- |
+| List projects    | < 200ms  | < 500ms    | Cached after first load   |
+| List issues      | < 300ms  | < 500ms    | Cached per project        |
+| Get issue detail | < 250ms  | < 500ms    | Includes comments         |
+| List MRs         | < 300ms  | < 500ms    | Cached per project        |
+| Create issue/MR  | < 1000ms | < 2000ms   | Network write operation   |
+| View diff        | < 500ms  | < 1000ms   | Large diffs may be slower |
 
 ### Memory Usage
 
@@ -57,47 +58,50 @@ diff current.txt main.txt
 GitXab.vim uses ETag-based HTTP caching:
 
 **How it works:**
+
 1. First request stores response and ETag
 2. Subsequent requests include If-None-Match header
 3. Server returns 304 (Not Modified) if unchanged
 4. Full response (200) only when data changed
 
 **Implementation:**
+
 ```typescript
 // deno-backend/src/cache/cache_manager.ts
 const cache = new Map<string, CacheEntry>();
 
 export async function fetchWithCache(url: string, options: RequestInit) {
   const cached = cache.get(url);
-  
+
   if (cached?.etag) {
     options.headers = {
       ...options.headers,
-      'If-None-Match': cached.etag,
+      "If-None-Match": cached.etag,
     };
   }
-  
+
   const response = await fetch(url, options);
-  
+
   if (response.status === 304 && cached) {
     return new Response(JSON.stringify(cached.data), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { "Content-Type": "application/json" },
     });
   }
-  
+
   // Store new response with ETag
-  const etag = response.headers.get('ETag');
+  const etag = response.headers.get("ETag");
   if (etag) {
     const data = await response.json();
     cache.set(url, { data, etag });
   }
-  
+
   return response;
 }
 ```
 
 **Benefits:**
+
 - Reduced bandwidth usage
 - Lower API rate limit consumption
 - Faster response times (304 responses are quick)
@@ -106,25 +110,27 @@ export async function fetchWithCache(url: string, options: RequestInit) {
 ### 2. Smart Buffer Management
 
 **Buffer Reuse:**
+
 ```typescript
 // denops/gitxab/main.ts
 async function findOrCreateBuffer(denops: Denops, filetype: string) {
   // Check for existing buffer with same filetype
   const buffers = await fn.getbufinfo(denops) as BufferInfo[];
-  
+
   for (const buf of buffers) {
     const ft = await fn.getbufvar(denops, buf.bufnr, "&filetype");
     if (ft === filetype && buf.listed) {
       return buf.bufnr;
     }
   }
-  
+
   // Create new buffer if not found
   return await createNewBuffer(denops, filetype);
 }
 ```
 
 **Benefits:**
+
 - No duplicate windows
 - Reduced memory usage
 - Better user experience
@@ -133,6 +139,7 @@ async function findOrCreateBuffer(denops: Denops, filetype: string) {
 ### 3. Lazy Loading
 
 **Commands are lazy-loaded in plugin config:**
+
 ```lua
 -- lazy.nvim config
 {
@@ -143,6 +150,7 @@ async function findOrCreateBuffer(denops: Denops, filetype: string) {
 ```
 
 **Benefits:**
+
 - Faster Neovim startup
 - Reduced memory footprint when not in use
 - denops starts on first command
@@ -171,6 +179,7 @@ async function* paginateResults(endpoint: string) {
 ```
 
 **Current Implementation:**
+
 - Fetches first page only (20 items)
 - Good for most use cases
 - Future: Add "Load More" functionality
@@ -189,6 +198,7 @@ const [projects, issues, mrs] = await Promise.all([
 ```
 
 **Benefits:**
+
 - Non-blocking operations
 - Parallel requests when possible
 - Better responsiveness
@@ -203,6 +213,7 @@ nvim
 ```
 
 Logs show:
+
 - Request URLs
 - Response times
 - Cache hits/misses
@@ -232,10 +243,12 @@ deno run --v8-flags=--prof-process isolate-*-v8.log
 ### Issue: Slow Project Listing
 
 **Symptoms:**
+
 - First `:GitXabProjects` takes > 500ms
 - Subsequent calls still slow
 
 **Diagnosis:**
+
 ```bash
 GITXAB_DEBUG=1 nvim
 :GitXabProjects
@@ -243,6 +256,7 @@ GITXAB_DEBUG=1 nvim
 ```
 
 **Solutions:**
+
 1. Check network latency to GitLab
 2. Verify ETag caching is working
 3. Reduce per_page if many projects
@@ -251,15 +265,18 @@ GITXAB_DEBUG=1 nvim
 ### Issue: High Memory Usage
 
 **Symptoms:**
+
 - Neovim becomes sluggish
 - System memory exhausted
 
 **Diagnosis:**
+
 ```vim
 :echo luaeval('collectgarbage("count")')
 ```
 
 **Solutions:**
+
 1. Close unused buffers
 2. Clear cache (restart denops)
 3. Reduce number of open GitXab buffers
@@ -268,11 +285,12 @@ GITXAB_DEBUG=1 nvim
 ### Issue: Rate Limiting
 
 **Symptoms:**
+
 - 429 errors from GitLab API
 - "Rate limited" messages
 
-**Diagnosis:**
-Check GitLab rate limit status:
+**Diagnosis:** Check GitLab rate limit status:
+
 ```bash
 curl -H "Authorization: Bearer $GITLAB_TOKEN" \
   https://gitlab.com/api/v4/projects \
@@ -280,6 +298,7 @@ curl -H "Authorization: Bearer $GITLAB_TOKEN" \
 ```
 
 **Solutions:**
+
 1. Wait for rate limit reset
 2. Ensure caching is working
 3. Reduce frequency of operations
@@ -288,10 +307,12 @@ curl -H "Authorization: Bearer $GITLAB_TOKEN" \
 ### Issue: Slow Diff Rendering
 
 **Symptoms:**
+
 - `:GitXabMRs` diff view takes > 2s
 - Large diffs hang Neovim
 
 **Diagnosis:**
+
 ```vim
 :profile start profile.log
 :profile func *
@@ -302,6 +323,7 @@ curl -H "Authorization: Bearer $GITLAB_TOKEN" \
 ```
 
 **Solutions:**
+
 1. Limit diff size (future config option)
 2. Use streaming for large diffs
 3. Add pagination for files
@@ -310,6 +332,7 @@ curl -H "Authorization: Bearer $GITLAB_TOKEN" \
 ## Optimization Checklist
 
 ### Before Release
+
 - [ ] Run benchmarks on all major operations
 - [ ] Verify cache is working correctly
 - [ ] Test with slow network (throttling)
@@ -322,6 +345,7 @@ curl -H "Authorization: Bearer $GITLAB_TOKEN" \
 - [ ] Check startup time impact
 
 ### Regular Monitoring
+
 - [ ] Track API response times
 - [ ] Monitor cache hit rate
 - [ ] Check memory growth over time

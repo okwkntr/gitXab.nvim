@@ -1,16 +1,18 @@
 #!/usr/bin/env -S deno run --allow-net --allow-read --allow-env --unstable
 
 // Use the library entry point instead of direct service import
-import { listProjects, getIssue, listMergeRequests } from "./mod.ts";
+import { getIssue, listMergeRequests, listProjects } from "./mod.ts";
 
 function usage() {
-  console.error("Usage: cli.ts <command> [options]\nCommands:\n  list-projects [--q=query]\n  get-issue --project <id> --iid <iid>\n  list-mrs --project <id>\n");
+  console.error(
+    "Usage: cli.ts <command> [options]\nCommands:\n  list-projects [--q=query]\n  get-issue --project <id> --iid <iid>\n  list-mrs --project <id>\n",
+  );
 }
 
 function parseArgs() {
   const args = Deno.args.slice();
   const cmd = args.shift();
-  const out: Record<string, any> = { cmd, flags: {} };
+  const out: Record<string, unknown> = { cmd, flags: {} };
   while (args.length) {
     const a = args.shift()!;
     if (a.startsWith("--")) {
@@ -46,7 +48,10 @@ async function main() {
       Deno.exit(0);
     } else if (cmd === "list-mrs" || cmd === "list_mrs") {
       const project = Number(f.project || f.p);
-      if (!project) { usage(); Deno.exit(2); }
+      if (!project) {
+        usage();
+        Deno.exit(2);
+      }
       const res = await listMergeRequests(project);
       console.log(JSON.stringify(res));
       Deno.exit(0);
@@ -55,7 +60,9 @@ async function main() {
       Deno.exit(2);
     }
   } catch (e) {
-    const err = { error: { message: String(e?.message || e), stack: e?.stack } };
+    const err = {
+      error: { message: String(e?.message || e), stack: e?.stack },
+    };
     console.error(JSON.stringify(err));
     Deno.exit(1);
   }

@@ -1,22 +1,29 @@
 # GitXab.vim
 
-Neovim plugin for GitLab and GitHub integration - Access Git hosting platform features directly from your editor.
+![License](https://img.shields.io/badge/license-MIT-green)
+![Deno](https://img.shields.io/badge/deno-1.x-blue)
+![Neovim](https://img.shields.io/badge/neovim-0.7%2B-purple)
 
-> **🎉 New: Multi-Provider Support!** GitXab now supports both GitLab and GitHub with a unified interface. The provider is automatically detected from your git remote URL.
+Neovim plugin for GitLab and GitHub integration - Access Git hosting platform
+features directly from your editor.
+
+> **🎉 New: Multi-Provider Support!** GitXab now supports both GitLab and GitHub
+> with a unified interface. The provider is automatically detected from your git
+> remote URL.
 
 ## Features
 
 - 🔍 **Project Management**
   - Project listing and search
   - Interactive project menu
-  
+
 - 📋 **Issue Management**
   - List, view, create, edit issues
   - Comment on issues with markdown support
   - Reply to discussion threads
   - Pre-filled edit forms with current values
   - Multi-line description editor
-  
+
 - 🔀 **Merge Request Management**
   - List and view merge requests
   - View file changes and diffs
@@ -25,13 +32,13 @@ Neovim plugin for GitLab and GitHub integration - Access Git hosting platform fe
   - Comment on MRs
   - Reply to MR discussion threads
   - Auto-detect default branch
-  
+
 - 🔄 **Smart UI/UX**
   - Smart buffer reuse - No duplicate windows on reload
   - Keyboard shortcuts with built-in help (`?` key)
   - Editor-based forms for long text input
   - Real-time save with `:w` command
-  
+
 - 🚀 **Architecture**
   - Powered by denops.vim - No separate server required
   - Direct in-process API calls
@@ -44,7 +51,7 @@ Neovim plugin for GitLab and GitHub integration - Access Git hosting platform fe
   - Comments, Branches, Diffs
   - Auto-detection from git remote
   - Rate limit handling and retries
-  
+
 - ✅ **GitLab** - Legacy API support
   - Projects, Issues, Merge Requests
   - Comments, Branches, Diffs
@@ -73,7 +80,8 @@ Neovim plugin for GitLab and GitHub integration - Access Git hosting platform fe
 
 **Step 1: Install denops.vim**
 
-GitXab.vim requires [denops.vim](https://github.com/vim-denops/denops.vim) to run.
+GitXab.vim requires [denops.vim](https://github.com/vim-denops/denops.vim) to
+run.
 
 **Using lazy.nvim** (recommended):
 
@@ -149,7 +157,8 @@ export PATH="$HOME/.deno/bin:$PATH"
 
 **Step 3: Configure Authentication**
 
-GitXab automatically detects the provider from your git remote URL. Configure tokens as needed:
+GitXab automatically detects the provider from your git remote URL. Configure
+tokens as needed:
 
 **Method 1: Environment variables** (recommended):
 
@@ -197,7 +206,7 @@ vim.env.GITLAB_TOKEN = 'glpat_your_gitlab_token'
 
 - **GitHub**: https://github.com/settings/tokens
   - Scopes: `repo`, `read:user`
-  
+
 - **GitLab**: https://gitlab.com/-/profile/personal_access_tokens
   - Scopes: `api`, `read_user`, `read_api`
 
@@ -212,16 +221,19 @@ Once installed, you can use GitXab.vim commands directly in Neovim:
 ```
 
 This will:
+
 - Automatically start the Deno backend (via denops)
 - Fetch projects from GitLab API
 - Open a split window showing your projects
 
 **Interactive Navigation:**
+
 - Press `<Enter>` on any project to open a menu
 - Select "View Issues" to see issues for that project
 - Press `q` to close the buffer
 
 Example output:
+
 ```
 gitxab - Neovim GitLab plugin
 my-project - My awesome project
@@ -245,6 +257,7 @@ team-repo - Team collaboration repository
 ```
 
 Example output:
+
 ```
 Project: #12345 (15 issues)
 ================================================================================
@@ -262,11 +275,13 @@ Closed Issues:
 ```
 
 **Interactive Navigation:**
+
 - Press `q` to close the buffer
 - Press `r` to refresh the issue list
 - Press `n` to create a new issue
 
 To get the project ID:
+
 1. Run `:GitXabProjects` and press `<Enter>` on any project
 2. Or check the project's GitLab URL (the ID is visible in project settings)
 3. Or use the GitLab API browser to find project IDs
@@ -279,11 +294,13 @@ To get the project ID:
 ```
 
 This will interactively prompt you for:
+
 - Issue title (required)
 - Issue description (optional)
 - Labels (comma-separated, optional)
 
 You can also create an issue from:
+
 - Project menu (`:GitXabProjects` → `<Enter>` → "Create New Issue")
 - Issue list buffer (press `n`)
 
@@ -294,6 +311,7 @@ You can also create an issue from:
 ```
 
 Example output:
+
 ```
 GitLab Merge Requests - Project #12345
 ================================================================================
@@ -313,6 +331,7 @@ Keys: <Enter>=View  n=Create MR  r=Refresh  q=Close  ?=Help
 ```
 
 **Interactive Navigation:**
+
 - Press `<Enter>` on any MR to view details
 - Press `n` to create a new merge request
 - Press `r` to refresh the list
@@ -320,6 +339,7 @@ Keys: <Enter>=View  n=Create MR  r=Refresh  q=Close  ?=Help
 - Press `?` to show help
 
 **Status Icons:**
+
 - 🟢 Opened
 - 🟣 Merged
 - 🔴 Closed
@@ -332,6 +352,7 @@ Keys: <Enter>=View  n=Create MR  r=Refresh  q=Close  ?=Help
 ```
 
 This opens an editor-based form with:
+
 - **Remote branch list** - Shows available branches from GitLab
 - **Default branch detection** - Automatically sets target branch
 - **Form fields**:
@@ -343,52 +364,59 @@ This opens an editor-based form with:
   - `remove_source_branch` (optional) - Delete source branch after merge
 
 Example form:
+
 ```markdown
-" Available branches (15 total):
-"   - main (default)
-"   - develop
-"   - feature/new-api
-"   - feature/ui-improvements
-"   - hotfix/critical-bug
+" Available branches (15 total): " - main (default) " - develop " -
+feature/new-api " - feature/ui-improvements " - hotfix/critical-bug
 
 ## * Source Branch (your branch to merge FROM)
+
 source_branch: feature/new-api
 
 ## * Target Branch (branch to merge INTO, usually 'main')
+
 target_branch: main
 
 ## * Title
+
 title: Add new API endpoints for user management
 
 ## Description (optional, markdown supported)
-description: |
-  This MR adds the following features:
-  - User CRUD endpoints
-  - Authentication middleware
-  - Input validation
+
+description: | This MR adds the following features:
+
+- User CRUD endpoints
+- Authentication middleware
+- Input validation
 
 ## Labels (optional, comma-separated)
+
 labels: feature, api
 
 ## Remove Source Branch After Merge (optional, true/false)
+
 remove_source_branch: true
 ```
 
 **Usage:**
+
 1. Fill in the form fields
 2. Save with `:w` to create the MR
 3. Close with `:q` after saving
 4. Or cancel with `:q!` without saving
 
 You can also create an MR from:
+
 - Project menu (`:GitXabProjects` → `<Enter>` → "Create New Merge Request")
 - MR list buffer (press `n`)
 
 #### Keyboard Shortcuts
 
-All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitXab buffer to see context-sensitive help.
+All keyboard shortcuts are displayed in the buffer header. Press `?` in any
+GitXab buffer to see context-sensitive help.
 
 **Project List Buffer** (`:GitXabProjects`):
+
 - `<Enter>` - Open project menu with options:
   - View Issues
   - Create New Issue
@@ -398,6 +426,7 @@ All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitX
 - `?` - Show help
 
 **Issue List Buffer** (`:GitXabIssues`):
+
 - `<Enter>` - View issue details and comments
 - `q` - Close buffer
 - `r` - Refresh issue list (reuses existing buffer)
@@ -405,14 +434,17 @@ All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitX
 - `?` - Show help
 
 **Issue Detail Buffer**:
+
 - `c` - Add comment (opens markdown editor)
 - `R` - Reply to a discussion thread (opens markdown editor)
-- `e` - Edit issue (title/description/labels/state) with current values pre-filled
+- `e` - Edit issue (title/description/labels/state) with current values
+  pre-filled
 - `r` - Refresh issue view (reuses existing buffer)
 - `q` - Close buffer
 - `?` - Show help
 
 **Merge Request List Buffer** (`:GitXabMRs`):
+
 - `<Enter>` - View merge request details and discussions
 - `n` - Create new merge request
 - `r` - Refresh merge request list
@@ -420,6 +452,7 @@ All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitX
 - `?` - Show help
 
 **Merge Request Detail Buffer**:
+
 - `d` - View diffs (changed files)
 - `c` - Add comment to merge request (opens markdown editor)
 - `R` - Reply to a discussion thread (opens markdown editor)
@@ -428,11 +461,12 @@ All keyboard shortcuts are displayed in the buffer header. Press `?` in any GitX
 - `?` - Show help
 
 **Merge Request Diffs Buffer**:
+
 - `q` - Close buffer
 - `?` - Show help
 
-**Adding Comments & Replies**:
-Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
+**Adding Comments & Replies**: Both commenting (`c`) and replying (`R`) use a
+markdown editor (temporary file):
 
 1. **Add Comment (`c`)**:
    - Opens a markdown editor
@@ -443,7 +477,8 @@ Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
    - Or close with `:q!` without saving to keep the previous version
 
 2. **Reply to Discussion (`R`)**:
-   - Discussion threads are numbered `[1]`, `[2]`, `[3]`... in the issue detail view
+   - Discussion threads are numbered `[1]`, `[2]`, `[3]`... in the issue detail
+     view
    - Press `R` and enter the discussion number (e.g., `2`)
    - Opens a markdown editor with context (shows original discussion)
    - Write your reply (multiple lines, markdown supported)
@@ -453,6 +488,7 @@ Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
    - The reply will be added to the existing discussion thread
 
 **Editing Issues**:
+
 - **Title & Labels**: Current values are pre-filled in the input prompt
 - **Description**: Opens in a markdown buffer editor (temporary file)
   1. Edit the description (supports multiple lines and markdown)
@@ -461,11 +497,15 @@ Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
   4. Close with `:q` when done (temporary file is cleaned up automatically)
   5. Or close with `:q!` without saving to keep the previous version
 
-**Buffer Reuse**: When you press `r` (refresh) or re-run commands like `:GitXabIssues`, GitXab automatically reuses the existing buffer instead of creating a new window. This keeps your workspace clean and prevents window clutter.
+**Buffer Reuse**: When you press `r` (refresh) or re-run commands like
+`:GitXabIssues`, GitXab automatically reuses the existing buffer instead of
+creating a new window. This keeps your workspace clean and prevents window
+clutter.
 
 #### Troubleshooting
 
 **Plugin not loading:**
+
 ```vim
 " Check if denops is running
 :echo denops#server#status()
@@ -475,6 +515,7 @@ Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
 ```
 
 **No projects shown:**
+
 ```vim
 " Check environment variables in Neovim
 :lua print(vim.env.GITLAB_TOKEN)
@@ -482,6 +523,7 @@ Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
 ```
 
 **Denops startup issues:**
+
 ```vim
 " Enable denops debug logging
 :let g:denops#debug = 1
@@ -491,11 +533,13 @@ Both commenting (`c`) and replying (`R`) use a markdown editor (temporary file):
 ```
 
 **API connection errors:**
+
 - Verify your GitLab token is valid
 - Check network connectivity to GitLab
 - For self-hosted GitLab, ensure `GITLAB_BASE_URL` is correct
 
 **Enable debug logging:**
+
 ```vim
 " Enable detailed debug logging
 :let $GITXAB_DEBUG = "1"
@@ -507,31 +551,36 @@ vim.env.GITXAB_DEBUG = "1"
 ```
 
 Debug logs will show:
+
 - Buffer reuse logic: finding existing buffers, creating new ones
 - Buffer operations: filetype checks, window switching
 - Description editor: temp file paths, autocmd setup, save/update flow
 - API requests: URL, token status, headers
 - API responses: Status code, content type, body preview
 
-**Buffer reuse issues:**
-If windows keep splitting or buffers multiply:
+**Buffer reuse issues:** If windows keep splitting or buffers multiply:
+
 1. Enable debug mode: `:let $GITXAB_DEBUG = "1"`
 2. Run the command: `:GitXabProjects`
 3. Check messages: `:messages`
 4. Look for "findOrCreateBuffer" debug output
 5. Verify buffer names: `:ls` (should show `GitXab://...` names)
-6. Check filetype: `:set filetype?` (should be `gitxab-projects`, `gitxab-issues`, or `gitxab-issue`)
+6. Check filetype: `:set filetype?` (should be `gitxab-projects`,
+   `gitxab-issues`, or `gitxab-issue`)
 
 ### Available Commands
 
 **Provider Management:**
+
 - `:GitXabSetProvider github|gitlab` - Switch provider
 - `:GitXabShowProvider` - Show current provider and base URL
 
 **Project/Repository Management:**
+
 - `:GitXabProjects [search]` - List projects/repositories
 
 **Issue/PR Management:**
+
 - `:GitXabIssues <projectId> [state]` - List issues (state: opened/closed/all)
 - `:GitXabCreateIssue <projectId>` - Create new issue
 - `:GitXabMRs <projectId>` - List merge requests/pull requests
@@ -573,27 +622,33 @@ The CLI uses the same GitLab API client library as the Neovim plugin.
 ### Run Automated Tests
 
 **Backend API Tests**:
+
 ```bash
 deno test --allow-net --allow-read --allow-env tests/backend_test.ts
 ```
 
 **Integration Tests** (denops plugin functions):
+
 ```bash
 deno test --allow-env --allow-read --allow-net --allow-write tests/integration_test.ts
 ```
 
 Expected: All tests pass
+
 - Backend tests: 4 tests (listProjects, listIssues with filters)
 - Integration tests: 9 tests (dispatcher functions, buffer reuse, help system)
 
 ### Manual Testing
 
 **Buffer Reuse Test** (verify windows don't multiply on reload):
+
 ```bash
 ./tests/test_buffer_reuse.sh
 ```
 
-This interactive test helps verify that buffers are reused correctly and windows don't split on refresh. See `tests/TEST_BUFFER_REUSE.md` for detailed test procedures.
+This interactive test helps verify that buffers are reused correctly and windows
+don't split on refresh. See `tests/TEST_BUFFER_REUSE.md` for detailed test
+procedures.
 
 ### Test with Real GitLab API
 
@@ -608,6 +663,7 @@ deno run --allow-net --allow-read --allow-env deno-backend/cli.ts list-projects 
 ### Provider Selection
 
 GitXab automatically detects the provider from your git remote URL:
+
 - `github.com` or `https://github.com/` → GitHub
 - `gitlab.com` or `https://gitlab.com/` → GitLab
 - Self-hosted URLs → Detected by domain
@@ -641,24 +697,29 @@ GitXab automatically detects the provider from your git remote URL:
 ### Environment Variables
 
 **GitHub:**
+
 - `GITHUB_TOKEN` or `GH_TOKEN`: GitHub personal access token (required)
 - `GITHUB_BASE_URL`: GitHub API base URL (default: `https://api.github.com`)
 
 **GitLab:**
+
 - `GITLAB_TOKEN`: GitLab personal access token (required)
 - `GITLAB_BASE_URL`: GitLab API base URL (default: `https://gitlab.com/api/v4`)
 
 ### Token Storage
 
-1. Environment variable: `GITHUB_TOKEN`, `GH_TOKEN`, or `GITLAB_TOKEN` (recommended)
+1. Environment variable: `GITHUB_TOKEN`, `GH_TOKEN`, or `GITLAB_TOKEN`
+   (recommended)
 2. Config file: `~/.config/gitxab/config.json`
 3. OS keyring: (planned feature)
 
 ## Documentation
 
 - [Specification](docs/spec.md) - Feature requirements and technical design
-- [Quickstart Guide](specs/001-gitlab-vim-integration/quickstart.md) - Detailed setup instructions
-- [Implementation Plan](specs/001-gitlab-vim-integration/plan.md) - Development roadmap
+- [Quickstart Guide](specs/001-gitlab-vim-integration/quickstart.md) - Detailed
+  setup instructions
+- [Implementation Plan](specs/001-gitlab-vim-integration/plan.md) - Development
+  roadmap
 
 ## Development
 
@@ -684,9 +745,24 @@ gitxab.vim/
 
 ### Running Tests
 
-GitXab.vim includes comprehensive test coverage:
+GitXab.vim includes comprehensive test coverage with two types of test scripts:
 
-**Quick test run**:
+#### Test Scripts Comparison
+
+| Aspect                    | `run_tests.sh`        | `test_provider_commands.sh`  |
+| ------------------------- | --------------------- | ---------------------------- |
+| **Environment**           | Deno                  | Neovim                       |
+| **Test Target**           | Backend logic & units | Vim plugin integration       |
+| **External Dependencies** | None (uses mocks)     | Neovim, denops.vim           |
+| **CI/CD**                 | ✅ Well suited        | ❌ Complex setup             |
+| **Debug Use**             | Unit-level testing    | End-to-end verification      |
+| **Automation**            | Fully automated       | Manual execution recommended |
+| **Purpose**               | Continuous testing    | Plugin functionality check   |
+
+#### Automated Backend Tests
+
+**Quick test run with `run_tests.sh`**:
+
 ```bash
 # Run all tests
 ./run_tests.sh all
@@ -698,34 +774,56 @@ GitXab.vim includes comprehensive test coverage:
 ./run_tests.sh integration
 ```
 
-**Manual test execution**:
-```bash
-# Backend unit tests
-deno test --allow-env --allow-read --allow-net --allow-write tests/backend_test.ts
+**Test coverage**:
 
-# Integration tests
-deno test --allow-env --allow-read --allow-net --allow-write tests/integration_test.ts
+- Mock tests - Mock data validation
+- Unit tests - Authentication, cache, GitHub client, provider config
+- Integration tests - MockDenops integration, dispatcher functions
+- Backend tests - Real GitLab/GitHub API integration (optional)
+
+#### Neovim Plugin Integration Tests
+
+**Manual plugin verification with `test_provider_commands.sh`**:
+
+```bash
+chmod +x test_provider_commands.sh
+./test_provider_commands.sh
 ```
 
-**Test coverage**:
-- Backend API tests (Projects, Issues, MRs, Branches)
-- Integration tests (Dispatcher functions, buffer management)
-- E2E test scenarios (see `specs/001-gitlab-vim-integration/tests/e2e_mrs.md`)
+**Verification items**:
+
+- Command registration (`:GitXabSetProvider`, `:GitXabShowProvider`)
+- Autoload functions (`gitxab#set_provider()`, `gitxab#show_provider()`)
+- Denops plugin loading
+- Command execution in real Neovim environment
+
+**When to use**:
+
+- After modifying Vim plugin code
+- Debugging "command not found" issues
+- Verifying plugin manager compatibility
+- Testing in user-like environment
+
+#### E2E Test Scenarios
 
 **Running E2E tests**:
+
 1. Set up environment:
    ```bash
+   export GITHUB_TOKEN="your-token"
    export GITLAB_TOKEN="your-token"
    export GITXAB_DEBUG="1"
    ```
 2. Follow test scenarios in `specs/001-gitlab-vim-integration/tests/e2e_mrs.md`
-3. Use a test project or GitLab's public project (ID: 278964)
+3. Use a test project or public projects
 
 ### Contributing
 
-See the [implementation plan](specs/001-gitlab-vim-integration/plan.md) for current development status and tasks.
+See the [implementation plan](specs/001-gitlab-vim-integration/plan.md) for
+current development status and tasks.
 
 **Before submitting a PR**:
+
 1. Run all tests: `./run_tests.sh all`
 2. Update documentation if adding features
 3. Add tests for new functionality
@@ -734,28 +832,63 @@ See the [implementation plan](specs/001-gitlab-vim-integration/plan.md) for curr
 ## Documentation
 
 - **[Quick Start Guide](docs/QUICKSTART.md)** - 最速で始めるためのガイド
-- **[Provider Switching Guide](docs/PROVIDER_SWITCHING.md)** - プロバイダー切り替えの詳細
+- **[Provider Switching Guide](docs/PROVIDER_SWITCHING.md)** -
+  プロバイダー切り替えの詳細
 - **[Provider API Guide](deno-backend/PROVIDER_GUIDE.md)** - バックエンドAPI詳細
 - **[Vim Help](doc/gitxab.txt)** - `:help gitxab` で表示
 - **[Specification](docs/spec.md)** - 機能仕様と設計
-- **[Implementation Plan](specs/001-gitlab-vim-integration/plan.md)** - 開発ロードマップ
+- **[Implementation Plan](specs/001-gitlab-vim-integration/plan.md)** -
+  開発ロードマップ
 
 ## Commands Reference
 
-| Command | Description |
-|---------|-------------|
-| `:GitXabProjects [search]` | List projects/repositories |
-| `:GitXabIssues <id> [state]` | List issues |
-| `:GitXabCreateIssue <id>` | Create new issue |
-| `:GitXabMRs <id>` | List merge requests/pull requests |
-| `:GitXabCreateMR <id>` | Create new MR/PR |
-| `:GitXabSetProvider github\|gitlab` | Switch provider |
-| `:GitXabShowProvider` | Show current provider |
+| Command                             | Description                       |
+| ----------------------------------- | --------------------------------- |
+| `:GitXabProjects [search]`          | List projects/repositories        |
+| `:GitXabIssues <id> [state]`        | List issues                       |
+| `:GitXabCreateIssue <id>`           | Create new issue                  |
+| `:GitXabMRs <id>`                   | List merge requests/pull requests |
+| `:GitXabCreateMR <id>`              | Create new MR/PR                  |
+| `:GitXabSetProvider github\|gitlab` | Switch provider                   |
+| `:GitXabShowProvider`               | Show current provider             |
 
 ## License
 
-[To be determined]
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please see our guidelines:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Run tests: `./run_tests.sh all`
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+For more details, see [CONTRIBUTING.md](CONTRIBUTING.md) (coming soon).
+
+## Roadmap
+
+- [ ] Migrate GitLab to unified Provider interface
+- [ ] Add more GitHub features (Projects, Actions, etc.)
+- [ ] Support for additional git hosting platforms
+- [ ] Performance optimizations and caching improvements
+- [ ] Enhanced UI/UX with floating windows
+- [ ] OS keyring integration for secure token storage
+
+## Support
+
+- 📚 Documentation: [docs/](docs/)
+- 🐛 Bug Reports: [GitHub Issues](https://github.com/okwkntr/gitXab.nvim/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/okwkntr/gitXab.nvim/discussions)
 
 ## Credits
 
 Built with ❤️ for Neovim, GitHub, and GitLab users.
+
+**Technologies:**
+- [denops.vim](https://github.com/vim-denops/denops.vim) - TypeScript/Deno plugin framework
+- [Deno](https://deno.land/) - Modern JavaScript/TypeScript runtime
+- [Neovim](https://neovim.io/) - Hyperextensible Vim-based text editor

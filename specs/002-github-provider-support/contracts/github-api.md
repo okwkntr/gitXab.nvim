@@ -2,7 +2,8 @@
 
 ## GitHub REST API v3 Contracts
 
-このドキュメントは、GitHubのREST API v3との契約（エンドポイント、リクエスト/レスポンス形式）を定義します。
+このドキュメントは、GitHubのREST API
+v3との契約（エンドポイント、リクエスト/レスポンス形式）を定義します。
 
 ### 基本情報
 
@@ -37,6 +38,7 @@ GET /user/repos
 ```
 
 **Query Parameters:**
+
 - `visibility` (string): `all`, `public`, `private`
 - `affiliation` (string): `owner`, `collaborator`, `organization_member`
 - `sort` (string): `created`, `updated`, `pushed`, `full_name`
@@ -45,6 +47,7 @@ GET /user/repos
 - `page` (integer): Page number
 
 **Response: 200 OK**
+
 ```json
 [
   {
@@ -96,11 +99,13 @@ GET /search/repositories?q={query}
 ```
 
 **Query Parameters:**
+
 - `q` (string): 検索クエリ（必須）
 - `sort` (string): `stars`, `forks`, `updated`
 - `order` (string): `asc`, `desc`
 
 **Response: 200 OK**
+
 ```json
 {
   "total_count": 40,
@@ -122,6 +127,7 @@ GET /repos/{owner}/{repo}/issues
 ```
 
 **Query Parameters:**
+
 - `state` (string): `open`, `closed`, `all` (default: `open`)
 - `labels` (string): ラベルフィルター（カンマ区切り）
 - `sort` (string): `created`, `updated`, `comments`
@@ -131,6 +137,7 @@ GET /repos/{owner}/{repo}/issues
 - `page` (integer): ページ番号
 
 **Response: 200 OK**
+
 ```json
 [
   {
@@ -192,6 +199,7 @@ POST /repos/{owner}/{repo}/issues
 ```
 
 **Request Body:**
+
 ```json
 {
   "title": "Found a bug",
@@ -211,6 +219,7 @@ PATCH /repos/{owner}/{repo}/issues/{issue_number}
 ```
 
 **Request Body:**
+
 ```json
 {
   "title": "Updated title",
@@ -232,6 +241,7 @@ GET /repos/{owner}/{repo}/pulls
 ```
 
 **Query Parameters:**
+
 - `state` (string): `open`, `closed`, `all` (default: `open`)
 - `head` (string): ブランチフィルター（`user:branch`形式）
 - `base` (string): ベースブランチフィルター
@@ -241,6 +251,7 @@ GET /repos/{owner}/{repo}/pulls
 - `page` (integer): ページ番号
 
 **Response: 200 OK**
+
 ```json
 [
   {
@@ -310,6 +321,7 @@ POST /repos/{owner}/{repo}/pulls
 ```
 
 **Request Body:**
+
 ```json
 {
   "title": "Amazing new feature",
@@ -331,11 +343,13 @@ GET /repos/{owner}/{repo}/issues/{issue_number}/comments
 ```
 
 **Query Parameters:**
+
 - `since` (string): ISO 8601 timestamp
 - `per_page` (integer): 1-100
 - `page` (integer): ページ番号
 
 **Response: 200 OK**
+
 ```json
 [
   {
@@ -361,6 +375,7 @@ POST /repos/{owner}/{repo}/issues/{issue_number}/comments
 ```
 
 **Request Body:**
+
 ```json
 {
   "body": "Me too"
@@ -378,11 +393,13 @@ GET /repos/{owner}/{repo}/branches
 ```
 
 **Query Parameters:**
+
 - `protected` (boolean): 保護ブランチのみ
 - `per_page` (integer): 1-100
 - `page` (integer): ページ番号
 
 **Response: 200 OK**
+
 ```json
 [
   {
@@ -405,10 +422,12 @@ GET /repos/{owner}/{repo}/pulls/{pull_number}/files
 ```
 
 **Query Parameters:**
+
 - `per_page` (integer): 1-100
 - `page` (integer): ページ番号
 
 **Response: 200 OK**
+
 ```json
 [
   {
@@ -434,6 +453,7 @@ Accept: application/vnd.github.v3.diff
 ```
 
 **Response: 200 OK** (text/plain)
+
 ```diff
 diff --git a/file1.txt b/file1.txt
 index 6dcb09b..b1e6722 100644
@@ -449,6 +469,7 @@ index 6dcb09b..b1e6722 100644
 ## Error Responses
 
 ### 401 Unauthorized
+
 ```json
 {
   "message": "Requires authentication",
@@ -457,6 +478,7 @@ index 6dcb09b..b1e6722 100644
 ```
 
 ### 403 Forbidden (Rate Limit)
+
 ```json
 {
   "message": "API rate limit exceeded for user ID 1.",
@@ -465,6 +487,7 @@ index 6dcb09b..b1e6722 100644
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "message": "Not Found",
@@ -473,6 +496,7 @@ index 6dcb09b..b1e6722 100644
 ```
 
 ### 422 Unprocessable Entity
+
 ```json
 {
   "message": "Validation Failed",
@@ -538,4 +562,5 @@ Response:
 ```
 
 ## 変更履歴
+
 - 2025-11-24: 初版作成
