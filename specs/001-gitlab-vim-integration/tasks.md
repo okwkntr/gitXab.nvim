@@ -38,53 +38,67 @@
 
 ---
 
-## Phase 3: User Story 1 - Project listing & search (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Project listing & search (Priority: P1) 🎯 MVP ✅
 
 **Goal**: ユーザーがNeovimからプロジェクトの一覧を検索・表示できる。MVPは一覧取得と検索（名前/説明）と簡易表示。
 
 **Independent Test**: `deno-backend` が `/projects?q=...` を返し、Neovim の `:GitXabProjects` コマンドが結果をバッファに表示すること（手順を quickstart.mdに記載）。
 
-- [ ] T014 [P] [US1] Create `Project` entity/types in backend — `deno-backend/src/models/project.ts`
-- [ ] T015 [P] [US1] Implement backend endpoint GET `/projects` (connect to GitLab API, support `q` param) — `deno-backend/src/routes/projects.ts`
-- [ ] T016 [US1] Implement backend contract test for `/projects` using OpenAPI stub — `deno-backend/tests/contract/test_projects.ts`
-- [ ] T017 [US1] Implement Lua renderer for projects list buffer — `lua/gitxab/projects.lua`
-- [ ] T018 [US1] Implement Neovim user command `:GitXabProjects` to call IPC and open projects buffer — `lua/gitxab/commands.lua`
-- [ ] T019 [US1] Add quick integration test: start backend (deno), run Lua script to request projects and assert buffer populated — `specs/001-gitlab-vim-integration/tests/e2e_projects.md`
-- [ ] T020 [US1] Update `quickstart.md` with example usage and token setup — `specs/001-gitlab-vim-integration/quickstart.md`
+**Status**: COMPLETED - Using Denops direct integration instead of IPC
+
+- [X] T014 [P] [US1] Create `Project` entity/types in backend — `deno-backend/mod.ts`
+- [X] T015 [P] [US1] Implement backend API `listProjects()` (connect to GitLab API, support `q` param) — `deno-backend/src/services/gitlab_client.ts`
+- [X] T016 [US1] Implement backend tests for projects API — `tests/backend_test.ts`
+- [X] T017 [US1] Implement Denops renderer for projects list buffer — `denops/gitxab/main.ts`
+- [X] T018 [US1] Implement Neovim user command `:GitXabProjects` via Denops — `denops/gitxab/main.ts`
+- [X] T019 [US1] Add integration tests for projects listing — `tests/integration_test.ts`
+- [X] T020 [US1] Update `README.md` with example usage and token setup — `README.md`
 
 ---
 
-## Phase 4: User Story 2 - Issue listing & detail (Priority: P1)
+## Phase 4: User Story 2 - Issue listing & detail (Priority: P1) ✅
 
 **Goal**: プロジェクトのIssue一覧を表示・検索、Issue詳細の表示とコメント投稿ができる。
 
-**Independent Test**: Backend endpoints `/projects/{id}/issues` and `/projects/{id}/issues/{iid}` work; Lua commands `:GitXabIssues {project}` and issue detail buffer can display and post a comment.
+**Independent Test**: Backend API functions work; Denops commands `:GitXabIssues {project}` and issue detail buffer can display and post comments/replies.
 
-- [ ] T021 [P] [US2] Create `Issue` entity/types in backend — `deno-backend/src/models/issue.ts`
-- [ ] T022 [P] [US2] Implement backend endpoint GET `/projects/{projectId}/issues` (filter params: state,label,assignee) — `deno-backend/src/routes/issues.ts`
-- [ ] T023 [US2] Implement backend endpoint GET `/projects/{projectId}/issues/{issueIid}` — `deno-backend/src/routes/issues.ts`
-- [ ] T024 [US2] Implement backend endpoint POST `/projects/{projectId}/issues/{issueIid}/comments` — `deno-backend/src/routes/comments.ts`
-- [ ] T025 [US2] Implement Lua issue list UI and navigation to issue detail buffer — `lua/gitxab/issues.lua`
-- [ ] T026 [US2] Implement Lua UI for posting comments (open input, send via IPC) — `lua/gitxab/comments.lua`
-- [ ] T027 [US2] Add contract and integration tests for issue endpoints — `deno-backend/tests/contract/test_issues.ts`
-- [ ] T028 [US2] Add E2E test recipe demonstrating listing, opening an issue, and posting a comment — `specs/001-gitlab-vim-integration/tests/e2e_issues.md`
+**Status**: COMPLETED - Includes creation, editing, commenting, and threaded replies
+
+- [X] T021 [P] [US2] Create `Issue` entity/types in backend — `deno-backend/mod.ts`
+- [X] T022 [P] [US2] Implement backend API `listIssues()` (filter params: state) — `deno-backend/src/services/gitlab_client.ts`
+- [X] T023 [US2] Implement backend API `getIssue()` — `deno-backend/src/services/gitlab_client.ts`
+- [X] T024 [US2] Implement backend API `createIssueNote()` and `getIssueNotes()` — `deno-backend/src/services/gitlab_client.ts`
+- [X] T024b [US2] Implement backend API `getIssueDiscussions()` and `addNoteToDiscussion()` for threaded replies — `deno-backend/src/services/gitlab_client.ts`
+- [X] T024c [US2] Implement backend API `createIssue()` and `updateIssue()` for issue management — `deno-backend/src/services/gitlab_client.ts`
+- [X] T025 [US2] Implement Denops issue list UI and navigation to issue detail buffer — `denops/gitxab/main.ts`
+- [X] T026 [US2] Implement Denops UI for posting comments with editor integration — `denops/gitxab/main.ts`
+- [X] T026b [US2] Implement Denops UI for replying to discussion threads — `denops/gitxab/main.ts`
+- [X] T026c [US2] Implement Denops UI for creating and editing issues — `denops/gitxab/main.ts`
+- [X] T027 [US2] Add backend and integration tests for issue APIs — `tests/backend_test.ts`, `tests/integration_test.ts`
+- [X] T028 [US2] Document usage in README — `README.md`
 
 ---
 
-## Phase 5: User Story 3 - Merge Requests & diffs (Priority: P2)
+## Phase 5: User Story 3 - Merge Requests & diffs (Priority: P2) ✅
 
 **Goal**: MRの一覧表示、詳細表示、差分表示、差分へのコメントができる。
 
 **Independent Test**: Backend exposes `/projects/{id}/merge_requests` and `/projects/{id}/merge_requests/{iid}/diffs`; Lua can request diffs and render hunks.
 
-- [ ] T029 [P] [US3] Create `MergeRequest` and `DiffFile` types in backend — `deno-backend/src/models/merge_request.ts`
-- [ ] T030 [US3] Implement backend endpoint GET `/projects/{projectId}/merge_requests` — `deno-backend/src/routes/merge_requests.ts`
-- [ ] T031 [US3] Implement backend endpoint GET `/projects/{projectId}/merge_requests/{iid}/diffs` returning structured hunks — `deno-backend/src/routes/diffs.ts`
-- [ ] T032 [US3] Implement backend diff parser to produce JSON hunks (use GitLab diff API + post-processing) — `deno-backend/src/services/diff_parser.ts`
-- [ ] T033 [US3] Implement Lua diff renderer with navigation and inline comment anchors — `lua/gitxab/diffs.lua`
-- [ ] T034 [US3] Implement endpoint to POST inline diff comments and Lua UI to add comments — `deno-backend/src/routes/diff_comments.ts`, `lua/gitxab/diff_comments.lua`
-- [ ] T035 [US3] Add contract tests for MR/diff endpoints — `deno-backend/tests/contract/test_mrs.ts`
-- [ ] T036 [US3] Add E2E recipe for MR diff viewing and commenting — `specs/001-gitlab-vim-integration/tests/e2e_mrs.md`
+- [X] T029 [P] [US3] Implement MR list, detail, create via Denops API — `denops/gitxab/main.ts`, `deno-backend/src/services/gitlab_client.ts`
+- [X] T029b [US3] Add MR status icons and interactive navigation — `denops/gitxab/main.ts:listMergeRequests()`
+- [X] T030 [US3] Implement MR detail view with discussions — `denops/gitxab/main.ts:viewMergeRequest()`
+- [X] T030b [US3] Add MR commenting and threaded replies — `denops/gitxab/main.ts:commentOnMR()`, `replyToMRComment()`
+- [X] T030c [US3] Implement MR creation with form-based editor — `denops/gitxab/main.ts:createMergeRequest()`
+- [X] T030d [US3] Add branch list display in MR creation form — `deno-backend/src/services/gitlab_client.ts:listBranches()`
+- [X] T031 [US3] Implement MR diff viewing via GitLab API — `deno-backend/src/services/gitlab_client.ts:getMergeRequestChanges()`, `getMergeRequestDiffs()`
+- [X] T032 [US3] Implement Denops diff renderer with unified diff format — `denops/gitxab/main.ts:viewMRDiffs()`
+- [X] T033 [US3] Add file status indicators and syntax highlighting — Implemented with diff filetype and markers (NEW/DELETED/RENAMED/MODIFIED)
+- [ ] T034 [US3] Implement inline diff comments via Denops UI — Future work (requires line-specific comment API integration)
+- [X] T035 [US3] Add tests for MR endpoints — `tests/backend_test.ts` (Backend unit tests, integration tests)
+- [X] T036 [US3] Add E2E recipe for MR diff viewing and commenting — `specs/001-gitlab-vim-integration/tests/e2e_mrs.md`
+
+**STATUS**: COMPLETED - MR list/detail/create/comment/reply/diffs/tests implemented. Only inline diff commenting remains as future work.
 
 ---
 

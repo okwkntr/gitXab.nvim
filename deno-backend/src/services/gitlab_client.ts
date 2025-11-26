@@ -187,3 +187,46 @@ export async function addNoteToDiscussion(projectId: number, issueIid: number, d
 export async function listMergeRequests(projectId: number) {
   return await requestGet(`/projects/${projectId}/merge_requests`, { project_id: projectId });
 }
+
+export async function getMergeRequest(projectId: number, mrIid: number) {
+  return await requestGet(`/projects/${projectId}/merge_requests/${mrIid}`);
+}
+
+export async function getMergeRequestDiscussions(projectId: number, mrIid: number) {
+  return await requestGet(`/projects/${projectId}/merge_requests/${mrIid}/discussions`);
+}
+
+export async function addNoteToMRDiscussion(projectId: number, mrIid: number, discussionId: string, body: string) {
+  return await requestPost(`/projects/${projectId}/merge_requests/${mrIid}/discussions/${discussionId}/notes`, { body });
+}
+
+export async function createMRNote(projectId: number, mrIid: number, body: string) {
+  return await requestPost(`/projects/${projectId}/merge_requests/${mrIid}/notes`, { body });
+}
+
+export interface CreateMRParams {
+  source_branch: string;
+  target_branch: string;
+  title: string;
+  description?: string;
+  assignee_ids?: number[];
+  labels?: string;
+  remove_source_branch?: boolean;
+}
+
+export async function createMergeRequest(projectId: number, params: CreateMRParams) {
+  return await requestPost(`/projects/${projectId}/merge_requests`, params);
+}
+
+export async function listBranches(projectId: number) {
+  return await requestGet(`/projects/${projectId}/repository/branches`);
+}
+
+// Merge Request Changes/Diffs API
+export async function getMergeRequestChanges(projectId: number, mrIid: number) {
+  return await requestGet(`/projects/${projectId}/merge_requests/${mrIid}/changes`);
+}
+
+export async function getMergeRequestDiffs(projectId: number, mrIid: number) {
+  return await requestGet(`/projects/${projectId}/merge_requests/${mrIid}/diffs`);
+}

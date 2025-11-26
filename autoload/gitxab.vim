@@ -55,3 +55,13 @@ function! gitxab#merge_requests(...) abort
     echohl None
   endif
 endfunction
+
+function! gitxab#set_provider(provider) abort
+  " Set the provider (github or gitlab)
+  call denops#request('gitxab', 'setProvider', [a:provider])
+endfunction
+
+function! gitxab#show_provider() abort
+  " Show current provider
+  call denops#request('gitxab', 'showProvider', [])
+endfunction

@@ -20,9 +20,28 @@ call gitxab#load()
 
 " Configuration help
 " Set these environment variables in your init.vim/init.lua:
+"
+" For GitLab:
 "   let $GITLAB_TOKEN = 'your-token'
 "   let $GITLAB_BASE_URL = 'https://gitlab.com/api/v4'
 "
+" For GitHub:
+"   let $GITHUB_TOKEN = 'your-token'
+"   let $GITHUB_BASE_URL = 'https://api.github.com' " (optional)
+"
+" Provider Selection:
+"   let g:gitxab_provider = 'github'  " or 'gitlab' or 'auto' (default)
+"
 " Or in init.lua:
-"   vim.env.GITLAB_TOKEN = 'your-token'
-"   vim.env.GITLAB_BASE_URL = 'https://gitlab.com/api/v4'
+"   vim.env.GITHUB_TOKEN = 'your-token'
+"   vim.g.gitxab_provider = 'github'
+
+" Note: Commands are registered by the denops plugin when it loads
+" Available commands:
+"   :GitXabProjects [search]
+"   :GitXabIssues <project_id> [state]
+"   :GitXabCreateIssue <project_id>
+"   :GitXabMRs <project_id>
+"   :GitXabCreateMR <project_id>
+"   :GitXabSetProvider github|gitlab
+"   :GitXabShowProvider

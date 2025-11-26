@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["esnext"],
+    "lib": ["deno.ns", "deno.window", "esnext"],
     "types": []
   },
   "tasks": {
