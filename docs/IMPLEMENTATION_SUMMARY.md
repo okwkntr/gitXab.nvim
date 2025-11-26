@@ -11,6 +11,7 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 #### 1. バックエンドAPI (deno-backend/)
 
 **新規ファイル (2,337行追加):**
+
 - `src/providers/provider.ts` (296行) - 統一Provider interface
 - `src/providers/github_provider.ts` (258行) - GitHub実装
 - `src/providers/gitlab_provider.ts` (実装予定)
@@ -26,6 +27,7 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 - `PROVIDER_GUIDE.md` (462行) - API詳細ドキュメント
 
 **主要機能:**
+
 - 自動プロバイダー検出 (gitリモートURL、環境変数)
 - リトライロジック (最大3回)
 - レート制限ハンドリング
@@ -35,6 +37,7 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 #### 2. Vim/Neovimインテグレーション
 
 **変更ファイル:**
+
 - `denops/gitxab/main.ts`
   - Provider統合
   - `getProvider()` 関数追加
@@ -50,10 +53,12 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
   - 設定ヘルプ更新 (GitHub/GitLab両対応)
 
 **新コマンド:**
+
 - `:GitXabSetProvider github|gitlab` - プロバイダー切り替え
 - `:GitXabShowProvider` - 現在のプロバイダー表示
 
 **設定オプション:**
+
 - `g:gitxab_provider` - プロバイダー指定 ('github', 'gitlab', 'auto')
 - `$GITHUB_TOKEN` / `$GH_TOKEN` - GitHubトークン
 - `$GITLAB_TOKEN` - GitLabトークン
@@ -61,11 +66,13 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 #### 3. ドキュメント
 
 **新規ドキュメント:**
+
 - `docs/QUICKSTART.md` (200行) - クイックスタートガイド
 - `docs/PROVIDER_SWITCHING.md` (200行) - プロバイダー切り替え詳細
 - `deno-backend/PROVIDER_GUIDE.md` (462行) - バックエンドAPI詳細
 
 **更新ドキュメント:**
+
 - `README.md` - マルチプロバイダー対応、コマンドリファレンス追加
 - `doc/gitxab.txt` - Vimヘルプ全面更新
 - `CHANGELOG.md` - 変更履歴追加
@@ -73,10 +80,12 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 #### 4. テスト
 
 **新規テスト (47テスト追加):**
+
 - `tests/unit/github_client_test.ts` (18テスト) - GitHubクライアント
 - `tests/unit/provider_config_test.ts` (29テスト) - プロバイダー設定
 
 **テスト結果:**
+
 ```
 ✅ 93 passed
 ❌ 1 failed (バッファモックのみ、実機能に影響なし)
@@ -95,12 +104,14 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 ### コード統計
 
 **追加行数:**
+
 - TypeScript: 約2,500行 (バックエンド)
 - ドキュメント: 約900行
 - テスト: 約400行
 - **合計: 約3,800行**
 
 **ファイル数:**
+
 - 新規作成: 20ファイル
 - 更新: 9ファイル
 
@@ -129,10 +140,8 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 
 ### 動作確認
 
-✅ 型チェック成功
-✅ 93個のテストが成功
-✅ コマンドが正しく登録される
-✅ プロバイダー切り替えが動作
+✅ 型チェック成功 ✅ 93個のテストが成功 ✅ コマンドが正しく登録される ✅
+プロバイダー切り替えが動作
 
 ### 次のステップ
 
@@ -154,6 +163,7 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 以下のファイルをコミット可能:
 
 **新規ファイル:**
+
 - deno-backend/src/providers/* (4ファイル)
 - deno-backend/src/services/github_client.ts
 - deno-backend/src/models/* (3ファイル)
@@ -167,6 +177,7 @@ GitXab.vimがGitHubとGitLabの両方に対応しました。
 - tests/unit/provider_config_test.ts
 
 **変更ファイル:**
+
 - CHANGELOG.md
 - README.md
 - doc/gitxab.txt

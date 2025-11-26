@@ -1,0 +1,34 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Run lint
+        run: deno lint
+
+      - name: Run format check
+        run: deno fmt --check
+
+      - name: Run all tests
+        run: ./run_tests.sh all
+
+      - name: Check for TypeScript errors
+        run: |
+          deno check deno-backend/mod.ts
+          deno check denops/gitxab/main.ts

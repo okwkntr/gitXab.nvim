@@ -2,8 +2,15 @@
  * Unit tests for GitHub API client
  */
 
-import { assertEquals, assertExists, assertRejects } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { GitHubClient, GitHubAPIError } from "../../deno-backend/src/services/github_client.ts";
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
+  GitHubAPIError,
+  GitHubClient,
+} from "../../deno-backend/src/services/github_client.ts";
 
 // Mock GitHub API responses
 const mockRepository = {
@@ -91,7 +98,7 @@ Deno.test("GitHubClient - GitHubAPIError class", () => {
     message: "Not Found",
     documentation_url: "https://docs.github.com",
   });
-  
+
   assertEquals(error.name, "GitHubAPIError");
   assertEquals(error.status, 404);
   assertEquals(error.response?.message, "Not Found");

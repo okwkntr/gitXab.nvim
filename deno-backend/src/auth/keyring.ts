@@ -15,14 +15,15 @@ export async function getToken(): Promise<string | null> {
   if (envToken && envToken.trim().length > 0) return envToken.trim();
 
   // 2) config file fallback
-  const xdgConfig = Deno.env.get("XDG_CONFIG_HOME") || (Deno.env.get("HOME") ? `${Deno.env.get("HOME")}/.config` : undefined);
+  const xdgConfig = Deno.env.get("XDG_CONFIG_HOME") ||
+    (Deno.env.get("HOME") ? `${Deno.env.get("HOME")}/.config` : undefined);
   if (xdgConfig) {
     const path = `${xdgConfig}/gitxab/token`;
     try {
       const text = await Deno.readTextFile(path);
       const tok = text.trim();
       if (tok.length > 0) return tok;
-    } catch (e) {
+    } catch (_e) {
       // no file or unreadable, ignore
     }
   }
@@ -31,10 +32,17 @@ export async function getToken(): Promise<string | null> {
 }
 
 export async function storeTokenFallback(token: string): Promise<void> {
-  const xdgConfig = Deno.env.get("XDG_CONFIG_HOME") || (Deno.env.get("HOME") ? `${Deno.env.get("HOME")}/.config` : undefined);
-  if (!xdgConfig) throw new Error("XDG_CONFIG_HOME or HOME must be set to store token");
+  const xdgConfig = Deno.env.get("XDG_CONFIG_HOME") ||
+    (Deno.env.get("HOME") ? `${Deno.env.get("HOME")}/.config` : undefined);
+  if (!xdgConfig) {
+    throw new Error("XDG_CONFIG_HOME or HOME must be set to store token");
+  }
   const dir = `${xdgConfig}/gitxab`;
-  try { await Deno.mkdir(dir, { recursive: true }); } catch {}
+  try {
+    await Deno.mkdir(dir, { recursive: true });
+  } catch {
+    // Directory already exists
+  }
   const path = `${dir}/token`;
   await Deno.writeTextFile(path, token, { mode: 0o600 });
 }

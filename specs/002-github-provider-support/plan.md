@@ -1,7 +1,9 @@
 # Implementation Plan: GitHub Provider Support
 
-**Branch**: `002-github-provider-support` | **Date**: 2025-11-24 | **Spec**: [spec.md](spec.md)  
-**Input**: Feature specification from `/specs/002-github-provider-support/spec.md`
+**Branch**: `002-github-provider-support` | **Date**: 2025-11-24 | **Spec**:
+[spec.md](spec.md)\
+**Input**: Feature specification from
+`/specs/002-github-provider-support/spec.md`
 
 ## Summary
 
@@ -9,14 +11,16 @@ GitXab.vimにGitHubサポートを追加し、GitLabとGitHubの両方で統一�
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x, Deno 1.x  
-**Primary Dependencies**: Deno標準ライブラリ, denops.vim 5.x+, GitHub REST API v3  
-**Storage**: インメモリキャッシュ（ETag対応）  
-**Testing**: deno test, 統合テスト、E2Eテスト  
-**Target Platform**: Neovim 0.7+, Linux/macOS/Windows  
-**Project Type**: Vim/Neovimプラグイン（denops）  
-**Performance Goals**: レイテンシ < 500ms, GitHubレート制限対応（5000 req/hour）  
-**Constraints**: 既存GitLab機能への影響なし、後方互換性維持  
+**Language/Version**: TypeScript 5.x, Deno 1.x\
+**Primary Dependencies**: Deno標準ライブラリ, denops.vim 5.x+, GitHub REST API
+v3\
+**Storage**: インメモリキャッシュ（ETag対応）\
+**Testing**: deno test, 統合テスト、E2Eテスト\
+**Target Platform**: Neovim 0.7+, Linux/macOS/Windows\
+**Project Type**: Vim/Neovimプラグイン（denops）\
+**Performance Goals**: レイテンシ < 500ms, GitHubレート制限対応（5000
+req/hour）\
+**Constraints**: 既存GitLab機能への影響なし、後方互換性維持\
 **Scale/Scope**: 2つのプロバイダー（GitLab, GitHub）、統一API
 
 ## Architecture
@@ -65,18 +69,23 @@ GitXab.vimにGitHubサポートを追加し、GitLabとGitHubの両方で統一�
 ## Implementation Strategy
 
 ### Phase 1: 基盤整備（Infrastructure）
+
 **目標**: プロバイダー抽象化層とデータモデルの統一
 
 ### Phase 2: GitHub API実装（GitHub Client）
+
 **目標**: GitHub REST APIクライアントの完全実装
 
 ### Phase 3: プロバイダー統合（Provider Integration）
+
 **目標**: GitLabとGitHubをProviderインターフェースで統合
 
 ### Phase 4: UI統合（UI Integration）
+
 **目標**: Denopsプラグインでのプロバイダー切り替えとUX統一
 
 ### Phase 5: テストと文書化（Testing & Documentation）
+
 **目標**: 完全なテストカバレッジとドキュメント更新
 
 ## Dependencies & Execution Order
@@ -103,13 +112,15 @@ Phase 5 (テスト・文書化)
 ## Risk Mitigation
 
 ### 既存機能への影響
+
 - **リスク**: GitLab機能の破壊
-- **軽減策**: 
+- **軽減策**:
   - Provider層は新規追加のみ
   - 既存コードは最小限の変更
   - 回帰テスト強化
 
 ### GitHub API差異
+
 - **リスク**: GitLabとの機能差異が大きい
 - **軽減策**:
   - Provider層で差異を吸収
@@ -117,6 +128,7 @@ Phase 5 (テスト・文書化)
   - 段階的な機能追加
 
 ### レート制限
+
 - **リスク**: GitHub API制限（5000 req/hour）
 - **軽減策**:
   - ETagキャッシュの活用
@@ -126,26 +138,31 @@ Phase 5 (テスト・文書化)
 ## Validation Checkpoints
 
 ### Phase 1 完了条件
+
 - [ ] Provider interface定義完了
 - [ ] 統一データモデル作成
 - [ ] 既存GitLabコードが動作
 
 ### Phase 2 完了条件
+
 - [ ] GitHub API全エンドポイント実装
 - [ ] ユニットテスト通過
 - [ ] レート制限対応完了
 
 ### Phase 3 完了条件
+
 - [ ] GitLab/GitHub両Provider実装
 - [ ] Provider Factory動作
 - [ ] キャッシュ統合完了
 
 ### Phase 4 完了条件
+
 - [ ] プロバイダー切り替え機能
 - [ ] 統一コマンド動作
 - [ ] UI表示統一
 
 ### Phase 5 完了条件
+
 - [ ] テストカバレッジ > 80%
 - [ ] ドキュメント更新完了
 - [ ] E2Eテスト通過

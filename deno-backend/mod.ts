@@ -1,15 +1,15 @@
 /**
  * GitXab Backend Library
- * 
+ *
  * This module exports both GitLab and GitHub provider functionality:
  * - GitLab API client (legacy, direct API calls)
  * - Multi-provider support (GitHub + GitLab via unified Provider interface)
- * 
+ *
  * Used by:
  * - Denops plugin (denops/gitxab/main.ts)
  * - CLI tool (deno-backend/cli.ts)
  * - IPC server (deno-backend/src/server.ts) for backward compatibility
- * 
+ *
  * @module
  */
 
@@ -19,90 +19,90 @@
 
 // Core provider types and interfaces
 export type {
-  Provider,
-  User,
-  Repository,
-  Issue as ProviderIssue,
-  PullRequest,
-  Comment,
   Branch,
-  FileDiff,
-  PullRequestDiff,
+  Comment,
   CreateIssueParams as ProviderCreateIssueParams,
-  UpdateIssueParams as ProviderUpdateIssueParams,
   CreatePullRequestParams,
+  FileDiff,
+  Issue as ProviderIssue,
+  Provider,
+  PullRequest,
+  PullRequestDiff,
+  Repository,
+  UpdateIssueParams as ProviderUpdateIssueParams,
+  User,
 } from "./src/providers/provider.ts";
 
 // Provider factory
 export {
-  createProvider,
   createGitHubProvider,
+  createProvider,
   detectCurrentProvider,
   ProviderFactoryError,
 } from "./src/providers/provider_factory.ts";
 
 // GitHub provider
 export { GitHubProvider } from "./src/providers/github_provider.ts";
-export { GitHubConverter, githubConverter } from "./src/providers/github_converter.ts";
+export {
+  GitHubConverter,
+  githubConverter,
+} from "./src/providers/github_converter.ts";
 
 // GitHub API client
-export { GitHubClient, GitHubAPIError } from "./src/services/github_client.ts";
+export { GitHubAPIError, GitHubClient } from "./src/services/github_client.ts";
 
 // GitHub types
 export type {
-  GitHubUser,
-  GitHubOwner,
-  GitHubRepository,
-  GitHubLabel,
-  GitHubIssue,
-  GitHubPullRequest,
-  GitHubComment,
-  GitHubBranch,
-  GitHubFile,
-  CreateGitHubIssueParams,
-  UpdateGitHubIssueParams,
-  CreateGitHubPullRequestParams,
-  UpdateGitHubPullRequestParams,
   CreateGitHubCommentParams,
+  CreateGitHubIssueParams,
+  CreateGitHubPullRequestParams,
+  GitHubBranch,
+  GitHubComment,
+  GitHubFile,
+  GitHubIssue,
+  GitHubLabel,
+  GitHubOwner,
+  GitHubPullRequest,
+  GitHubRepository,
+  GitHubUser,
+  UpdateGitHubIssueParams,
+  UpdateGitHubPullRequestParams,
 } from "./src/models/github.ts";
 
 // Configuration and detection
 export type {
-  ProviderType,
-  ProviderConfig,
   GitXabConfig,
+  ProviderConfig,
+  ProviderType,
 } from "./src/config/provider_config.ts";
 
 export {
-  detectProviderFromUrl,
-  detectProviderFromEnv,
   autoDetectProvider,
-  getGitRemoteUrl,
-  loadConfig,
-  saveConfig,
-  getProviderConfig,
-  getBaseUrl,
-  parseRepositoryId,
-  extractOwnerAndRepo,
   DEFAULT_BASE_URLS,
+  detectProviderFromEnv,
+  detectProviderFromUrl,
+  extractOwnerAndRepo,
+  getBaseUrl,
+  getGitRemoteUrl,
+  getProviderConfig,
+  loadConfig,
+  parseRepositoryId,
+  saveConfig,
 } from "./src/config/provider_config.ts";
 
 // Authentication
 export {
-  getProviderToken,
-  getTokenFromEnv,
-  validateTokenFormat,
-  isAuthConfigured,
   createAuthHeaders,
   createRequestHeaders,
+  getProviderToken,
+  getTokenFromEnv,
   getUserAgent,
+  isAuthConfigured,
+  validateTokenFormat,
 } from "./src/auth/provider_auth.ts";
 
 // Common models and utilities
-export {
-  BaseConverter,
-  ConversionError,
-} from "./src/models/common.ts";
+export { BaseConverter, ConversionError } from "./src/models/common.ts";
 
 // ============================================================================
 // GitLab API Client (Legacy)
@@ -110,39 +110,34 @@ export {
 
 // GitLab API client functions
 export {
-  listProjects,
-  listIssues,
-  getIssue,
-  createIssue,
-  updateIssue,
-  getIssueNotes,
-  createIssueNote,
-  getIssueDiscussions,
   addNoteToDiscussion,
-  listMergeRequests,
-  getMergeRequest,
-  getMergeRequestDiscussions,
   addNoteToMRDiscussion,
-  createMRNote,
+  createIssue,
+  createIssueNote,
+  type CreateIssueParams,
   createMergeRequest,
-  listBranches,
+  createMRNote,
+  type CreateMRParams,
+  getIssue,
+  getIssueDiscussions,
+  getIssueNotes,
+  getMergeRequest,
   getMergeRequestChanges,
   getMergeRequestDiffs,
-  type CreateIssueParams,
+  getMergeRequestDiscussions,
+  listBranches,
+  listIssues,
+  listMergeRequests,
+  listProjects,
+  updateIssue,
   type UpdateIssueParams,
-  type CreateMRParams,
 } from "./src/services/gitlab_client.ts";
 
 // Authentication management
-export {
-  getToken,
-  storeTokenFallback,
-} from "./src/auth/keyring.ts";
+export { getToken, storeTokenFallback } from "./src/auth/keyring.ts";
 
 // Cache management
-export {
-  fetchWithCache,
-} from "./src/cache/cache_manager.ts";
+export { fetchWithCache } from "./src/cache/cache_manager.ts";
 
 // Types (to be defined)
 export type Project = {

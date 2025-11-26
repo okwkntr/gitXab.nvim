@@ -4,29 +4,36 @@
 
 ## Overview
 
-GitXab.vim v0.2.0 is a major update that completes the core feature set with full Merge Request support, comprehensive documentation, and a robust testing infrastructure. This release marks the completion of all planned MVP features (Phases 1-5) and polish work (Phase 6).
+GitXab.vim v0.2.0 is a major update that completes the core feature set with
+full Merge Request support, comprehensive documentation, and a robust testing
+infrastructure. This release marks the completion of all planned MVP features
+(Phases 1-5) and polish work (Phase 6).
 
 ## 🎉 Highlights
 
 ### Full Merge Request Support
+
 - View, create, and manage merge requests directly from Neovim
 - Complete diff viewing with syntax highlighting
 - Comment and reply to MR discussions
 - Branch management with automatic default branch detection
 
 ### Complete Issue Management
+
 - Create and edit issues with form-based editors
 - Reply to specific discussion threads
 - Pre-filled edit forms with current values
 - Full markdown support for descriptions and comments
 
 ### Production-Ready Documentation
+
 - Comprehensive guides for installation, configuration, and usage
 - Architecture documentation for contributors
 - Security best practices and compliance guidelines
 - Performance optimization techniques
 
 ### Robust Testing Infrastructure
+
 - Unit, integration, and contract tests
 - Performance benchmarking suite
 - Enhanced CI/CD pipeline with parallel test execution
@@ -37,6 +44,7 @@ GitXab.vim v0.2.0 is a major update that completes the core feature set with ful
 ### Features
 
 #### Merge Request Management
+
 - **List View**: Display all MRs with status icons (🟢/🟣/🔴)
 - **Detail View**: View MR details, branches, and discussions
 - **Diff View**: View file changes with unified diff format
@@ -45,12 +53,14 @@ GitXab.vim v0.2.0 is a major update that completes the core feature set with ful
 - **Commands**: `:GitXabMRs`, `:GitXabCreateMR`
 
 #### Enhanced Issue Management
+
 - Create issues with `:GitXabCreateIssue`
 - Edit existing issues (title, description, labels, state)
 - Reply to specific discussion threads
 - Form-based editors for complex input
 
 #### Documentation
+
 - Installation Guide - Complete setup for all package managers
 - Command Reference - All commands with examples
 - Configuration Guide - Environment variables and future options
@@ -60,12 +70,14 @@ GitXab.vim v0.2.0 is a major update that completes the core feature set with ful
 - Testing Guide - Running and writing tests
 
 #### Testing
+
 - Structured test suite (unit/integration/contract/performance)
 - Contract tests validate API schema compliance
 - Performance benchmarks for all operations
 - 88% task completion rate (37/42 tasks)
 
 #### CI/CD
+
 - Parallel test execution
 - Docker image build validation
 - Code coverage reporting
@@ -91,6 +103,7 @@ GitXab.vim v0.2.0 is a major update that completes the core feature set with ful
 ### Installation
 
 **With lazy.nvim:**
+
 ```lua
 {
   'your-org/gitxab.nvim',
@@ -137,24 +150,25 @@ GitXab.vim v0.2.0 is a major update that completes the core feature set with ful
 
 ### Completion Summary
 
-| Phase | Status | Tasks |
-|-------|--------|-------|
-| Phase 1: Setup | ✅ Complete | 6/6 |
-| Phase 2: Foundation | ✅ Complete | 5/7* |
-| Phase 3: Projects (MVP) | ✅ Complete | 7/7 |
-| Phase 4: Issues | ✅ Complete | 8/8 |
+| Phase                   | Status      | Tasks |
+| ----------------------- | ----------- | ----- |
+| Phase 1: Setup          | ✅ Complete | 6/6   |
+| Phase 2: Foundation     | ✅ Complete | 5/7*  |
+| Phase 3: Projects (MVP) | ✅ Complete | 7/7   |
+| Phase 4: Issues         | ✅ Complete | 8/8   |
 | Phase 5: Merge Requests | ✅ Complete | 8/9** |
-| Phase 6: Polish | ✅ Complete | 6/6 |
+| Phase 6: Polish         | ✅ Complete | 6/6   |
 
-*2 tasks deferred (T012, T013) - completed in Phase 6  
+*2 tasks deferred (T012, T013) - completed in Phase 6\
 **1 task deferred (T034 - inline diff comments) for future release
 
-**Overall Progress**: 88% (37/42 tasks)  
+**Overall Progress**: 88% (37/42 tasks)\
 **MVP Features**: 100% Complete
 
 ### What's Next?
 
 Future enhancements (not in this release):
+
 - Inline diff comments (Phase 5, T034)
 - OS keyring integration for secure token storage
 - Persistent disk cache
@@ -180,6 +194,7 @@ Future enhancements (not in this release):
 ## 🧪 Testing
 
 Run tests:
+
 ```bash
 # All tests
 deno test --allow-env --allow-read --allow-net
@@ -197,6 +212,7 @@ deno bench --allow-env --allow-read --allow-net tests/performance/
 ## 📚 Documentation
 
 Complete documentation available in `docs/`:
+
 - [Installation](docs/installation.md)
 - [Commands](docs/commands.md)
 - [Configuration](docs/configuration.md)
@@ -208,7 +224,9 @@ Complete documentation available in `docs/`:
 ## 🙏 Acknowledgments
 
 Built with:
-- [denops.vim](https://github.com/vim-denops/denops.vim) - Deno integration for Vim/Neovim
+
+- [denops.vim](https://github.com/vim-denops/denops.vim) - Deno integration for
+  Vim/Neovim
 - [Deno](https://deno.land/) - Modern JavaScript/TypeScript runtime
 - [GitLab API](https://docs.gitlab.com/ee/api/) - GitLab REST API v4
 

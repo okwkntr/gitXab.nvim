@@ -1,6 +1,7 @@
 # E2E Test Recipe: Merge Requests
 
-This document provides end-to-end test scenarios for GitXab.vim merge request features.
+This document provides end-to-end test scenarios for GitXab.vim merge request
+features.
 
 ## Prerequisites
 
@@ -28,6 +29,7 @@ This document provides end-to-end test scenarios for GitXab.vim merge request fe
 **Objective**: Verify MR list display with status icons and navigation
 
 **Steps**:
+
 1. Open Neovim
 2. Execute: `:GitXabMRs 278964`
 3. Verify buffer opens with MR list
@@ -35,12 +37,14 @@ This document provides end-to-end test scenarios for GitXab.vim merge request fe
 5. Verify branch information displayed (source → target)
 
 **Expected Results**:
+
 - Buffer with filetype `gitxab-mrs` is created
 - MRs displayed with format: `🟢 !IID Title [labels] @assignee date`
 - Branch info: `source_branch → target_branch`
 - Key mappings shown: `<Enter>=View  n=Create MR  r=Refresh  q=Close  ?=Help`
 
 **Validation**:
+
 ```vim
 " Check buffer filetype
 :set filetype?
@@ -61,12 +65,14 @@ Press ? key
 **Objective**: Verify MR detail view with discussions
 
 **Steps**:
+
 1. Execute: `:GitXabMRs 278964`
 2. Move cursor to any MR line
 3. Press `<Enter>` key
 4. Verify MR detail buffer opens
 
 **Expected Results**:
+
 - New buffer with filetype `gitxab-mr-detail`
 - Display shows:
   - MR title and IID
@@ -78,6 +84,7 @@ Press ? key
 - Key mappings: `d=Diffs  c=Comment  R=Reply  r=Refresh  q=Close  ?=Help`
 
 **Validation**:
+
 ```vim
 " Check filetype
 :set filetype?
@@ -98,11 +105,13 @@ Press r key
 **Objective**: Verify diff display with file status indicators
 
 **Steps**:
+
 1. From MR detail view (Scenario 2)
 2. Press `d` key
 3. Verify diff buffer opens
 
 **Expected Results**:
+
 - Buffer with filetype `diff`
 - Header shows:
   - MR title and IID
@@ -115,6 +124,7 @@ Press r key
   - Diff markers (+/- for additions/deletions, @@ for hunks)
 
 **Validation**:
+
 ```vim
 " Check filetype and syntax
 :set filetype?
@@ -137,6 +147,7 @@ Press r key
 **Objective**: Verify MR creation with form-based editor
 
 **Steps**:
+
 1. Execute: `:GitXabCreateMR 278964`
 2. Verify editor opens with form template
 3. Check branch list in comments
@@ -149,6 +160,7 @@ Press r key
 6. Close with `:q`
 
 **Expected Results**:
+
 - Temporary markdown file opens with:
   - Available branches listed in comments
   - Default branch indicated
@@ -158,6 +170,7 @@ Press r key
   - MR list view refreshes (if open)
 
 **Validation**:
+
 ```vim
 " Check if file is temporary
 :echo expand('%')
@@ -171,7 +184,8 @@ Press r key
 " Should show creation success message
 ```
 
-**Note**: This test requires write permissions to the project. For read-only testing, verify the form loads correctly and cancel with `:q!`.
+**Note**: This test requires write permissions to the project. For read-only
+testing, verify the form loads correctly and cancel with `:q!`.
 
 ---
 
@@ -180,6 +194,7 @@ Press r key
 **Objective**: Verify MR commenting workflow
 
 **Steps**:
+
 1. View an MR detail (Scenario 2)
 2. Press `c` key
 3. Verify markdown editor opens
@@ -188,6 +203,7 @@ Press r key
 6. Close with `:q`
 
 **Expected Results**:
+
 - Markdown editor opens with instructions
 - After save:
   - Success message: "✓ Comment posted to MR !<IID>"
@@ -195,6 +211,7 @@ Press r key
   - New comment appears at bottom of discussion list
 
 **Validation**:
+
 ```vim
 " Check temporary file
 :echo expand('%')
@@ -216,6 +233,7 @@ Press r key
 **Objective**: Verify threaded replies to MR discussions
 
 **Steps**:
+
 1. View an MR with discussions (Scenario 2)
 2. Note a discussion number (e.g., [2])
 3. Press `R` key
@@ -225,6 +243,7 @@ Press r key
 7. Close with `:q`
 
 **Expected Results**:
+
 - Prompt appears: "Enter discussion number:"
 - Editor opens showing original discussion context
 - After save:
@@ -233,6 +252,7 @@ Press r key
   - Reply appears indented under original discussion
 
 **Validation**:
+
 ```vim
 " Check buffer variables
 :echo b:gitxab_action
@@ -255,6 +275,7 @@ Press r key
 **Objective**: Verify smart buffer reuse prevents window clutter
 
 **Steps**:
+
 1. Execute: `:GitXabMRs 278964`
 2. Note current window count: `:echo winnr('$')`
 3. Press `r` to refresh
@@ -264,11 +285,13 @@ Press r key
 7. Check window count
 
 **Expected Results**:
+
 - Window count remains same after refresh
 - No duplicate windows created
 - Same buffer number reused
 
 **Validation**:
+
 ```vim
 " Before refresh
 :let before_winnr = winnr('$')
@@ -297,21 +320,21 @@ Press r
 
 **Test Matrix**:
 
-| Buffer Type | Key | Expected Action |
-|-------------|-----|-----------------|
-| MR List | `<Enter>` | Open MR detail |
-| MR List | `n` | Create new MR |
-| MR List | `r` | Refresh list |
-| MR List | `q` | Close buffer |
-| MR List | `?` | Show help |
-| MR Detail | `d` | View diffs |
-| MR Detail | `c` | Add comment |
-| MR Detail | `R` | Reply to discussion |
-| MR Detail | `r` | Refresh view |
-| MR Detail | `q` | Close buffer |
-| MR Detail | `?` | Show help |
-| MR Diffs | `q` | Close buffer |
-| MR Diffs | `?` | Show help |
+| Buffer Type | Key       | Expected Action     |
+| ----------- | --------- | ------------------- |
+| MR List     | `<Enter>` | Open MR detail      |
+| MR List     | `n`       | Create new MR       |
+| MR List     | `r`       | Refresh list        |
+| MR List     | `q`       | Close buffer        |
+| MR List     | `?`       | Show help           |
+| MR Detail   | `d`       | View diffs          |
+| MR Detail   | `c`       | Add comment         |
+| MR Detail   | `R`       | Reply to discussion |
+| MR Detail   | `r`       | Refresh view        |
+| MR Detail   | `q`       | Close buffer        |
+| MR Detail   | `?`       | Show help           |
+| MR Diffs    | `q`       | Close buffer        |
+| MR Diffs    | `?`       | Show help           |
 
 **Steps**: Test each key mapping in the corresponding buffer type
 
@@ -326,24 +349,28 @@ Press r
 **Test Cases**:
 
 1. **Invalid Project ID**:
+
 ```vim
 :GitXabMRs 999999999
 " Should show error message, not crash
 ```
 
 2. **Invalid MR IID**:
+
 ```vim
 :call denops#request('gitxab', 'viewMergeRequest', [278964, 999999])
 " Should show "Merge request not found" error
 ```
 
 3. **Network Error** (disconnect network):
+
 ```vim
 :GitXabMRs 278964
 " Should show connection error message
 ```
 
 4. **Invalid Token**:
+
 ```vim
 :let $GITLAB_TOKEN = "invalid-token"
 :call denops#plugin#reload('gitxab')
@@ -352,6 +379,7 @@ Press r
 ```
 
 **Expected Results**:
+
 - All errors display user-friendly messages
 - Plugin doesn't crash
 - Can recover by fixing issue and retrying
@@ -363,6 +391,7 @@ Press r
 **Objective**: Verify acceptable performance with large datasets
 
 **Steps**:
+
 1. Find a project with many MRs (100+)
 2. Execute: `:GitXabMRs <project_id>`
 3. Measure load time
@@ -370,12 +399,14 @@ Press r
 5. View diffs for an MR with many files
 
 **Expected Results**:
+
 - MR list loads in < 5 seconds
 - MR detail loads in < 3 seconds
 - Diffs load in < 5 seconds
 - UI remains responsive
 
 **Validation**:
+
 ```vim
 " Enable timing
 :profile start profile.log
@@ -403,6 +434,7 @@ Press r
 **Background**: Fixed regex pattern from `/^[🟢🟣🔴]\s+!(\d+)/` to `/!\s*(\d+)/`
 
 **Steps**:
+
 1. Execute: `:GitXabMRs 278964`
 2. Move cursor to any MR line
 3. Press `<Enter>`
@@ -418,15 +450,18 @@ Press r
 **Objective**: Verify branch list shows in MR creation form
 
 **Steps**:
+
 1. Execute: `:GitXabCreateMR 278964`
 2. Check comment section for branch list
 
-**Expected**: 
+**Expected**:
+
 - Comment lines with available branches
 - Default branch indicated
 - Top 20 branches shown
 
 **Validation**:
+
 ```vim
 " Search for branch list comments
 :/Available branches
@@ -465,34 +500,40 @@ echo "Manual E2E tests - follow e2e_mrs.md scenarios"
 # Test Results - [Date]
 
 ## Environment
-- Neovim version: 
+
+- Neovim version:
 - Deno version:
 - GitLab instance:
 - Token scopes:
 
 ## Results Summary
+
 - Total scenarios: 10
-- Passed: 
-- Failed: 
+- Passed:
+- Failed:
 - Skipped:
 
 ## Scenario Results
 
 ### Scenario 1: List Merge Requests
+
 - Status: ✅ PASS / ❌ FAIL
 - Notes:
 
 ### Scenario 2: View MR Detail
+
 - Status: ✅ PASS / ❌ FAIL
 - Notes:
 
 [Continue for all scenarios...]
 
 ## Issues Found
+
 1. [Description]
 2. [Description]
 
 ## Performance Metrics
+
 - MR list load: X seconds
 - MR detail load: X seconds
 - Diff load: X seconds
@@ -515,21 +556,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Deno
         uses: denoland/setup-deno@v1
-        
+
       - name: Setup Neovim
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
-          
+
       - name: Run Backend Tests
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         run: |
           deno test --allow-env --allow-read --allow-net tests/backend_test.ts
-          
+
       - name: Run Integration Tests
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
@@ -548,6 +589,6 @@ jobs:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-11-24  
+**Document Version**: 1.0\
+**Last Updated**: 2025-11-24\
 **Maintainer**: GitXab Contributors

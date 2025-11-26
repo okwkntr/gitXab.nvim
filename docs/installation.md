@@ -14,23 +14,27 @@ Before installing GitXab.vim, ensure you have the following:
 ### Install Deno
 
 **Linux/macOS:**
+
 ```bash
 curl -fsSL https://deno.land/install.sh | sh
 ```
 
 **Windows (PowerShell):**
+
 ```powershell
 irm https://deno.land/install.ps1 | iex
 ```
 
 Verify installation:
+
 ```bash
 deno --version
 ```
 
 ### Install denops.vim
 
-GitXab.vim requires [denops.vim](https://github.com/vim-denops/denops.vim) as a dependency.
+GitXab.vim requires [denops.vim](https://github.com/vim-denops/denops.vim) as a
+dependency.
 
 ## Step 2: Install GitXab.vim
 
@@ -102,11 +106,13 @@ let $GITLAB_TOKEN = 'your-gitlab-personal-access-token'
 ### Manual Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/your-org/gitxab.nvim ~/.config/nvim/pack/plugins/start/gitxab.nvim
 ```
 
 2. Install denops.vim:
+
 ```bash
 git clone https://github.com/vim-denops/denops.vim ~/.config/nvim/pack/plugins/start/denops.vim
 ```
@@ -203,5 +209,6 @@ If the plugin is slow:
 ## Next Steps
 
 - Read the [Command Reference](commands.md) to learn available commands
-- Check out the [Configuration Guide](configuration.md) for customization options
+- Check out the [Configuration Guide](configuration.md) for customization
+  options
 - Review [Keyboard Shortcuts](shortcuts.md) for efficient navigation

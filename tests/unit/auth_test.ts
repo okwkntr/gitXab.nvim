@@ -13,11 +13,11 @@ function getTokenFromEnv(): string | null {
 Deno.test("auth - should get token from environment", () => {
   // Save original token
   const original = Deno.env.get("GITLAB_TOKEN");
-  
+
   try {
     // Set test token
     Deno.env.set("GITLAB_TOKEN", "test-token-12345");
-    
+
     const token = getTokenFromEnv();
     assertEquals(token, "test-token-12345");
   } finally {
@@ -33,11 +33,11 @@ Deno.test("auth - should get token from environment", () => {
 Deno.test("auth - should return null when token not set", () => {
   // Save original token
   const original = Deno.env.get("GITLAB_TOKEN");
-  
+
   try {
     // Remove token
     Deno.env.delete("GITLAB_TOKEN");
-    
+
     const token = getTokenFromEnv();
     assertEquals(token, null);
   } finally {
@@ -51,11 +51,11 @@ Deno.test("auth - should return null when token not set", () => {
 Deno.test("auth - token should not be empty string", () => {
   // Save original token
   const original = Deno.env.get("GITLAB_TOKEN");
-  
+
   try {
     // Set empty token
     Deno.env.set("GITLAB_TOKEN", "");
-    
+
     const token = getTokenFromEnv();
     // Empty string should be treated as missing
     assertEquals(token === "" || token === null, true);
@@ -72,12 +72,12 @@ Deno.test("auth - token should not be empty string", () => {
 Deno.test("auth - should handle token with special characters", () => {
   // Save original token
   const original = Deno.env.get("GITLAB_TOKEN");
-  
+
   try {
     // Set token with special characters
     const specialToken = "glpat-ABC_123-xyz/789+equals=";
     Deno.env.set("GITLAB_TOKEN", specialToken);
-    
+
     const token = getTokenFromEnv();
     assertEquals(token, specialToken);
   } finally {

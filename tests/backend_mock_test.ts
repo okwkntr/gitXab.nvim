@@ -1,13 +1,16 @@
 /**
  * Unit tests for GitXab backend with mocked responses
  * Run with: deno test --allow-env tests/backend_mock_test.ts
- * 
+ *
  * These tests validate data structures without requiring a GitLab instance.
  * Mock data follows the type definitions in deno-backend/mod.ts
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import type { Issue, Project, MergeRequest } from "../deno-backend/mod.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import type { Issue, MergeRequest, Project } from "../deno-backend/mod.ts";
 
 // Mock data following GitXab type definitions
 const MOCK_PROJECTS: Project[] = [
@@ -100,29 +103,30 @@ const MOCK_MERGE_REQUESTS: MergeRequest[] = [
       username: "developer1",
       name: "Developer One",
     },
-    web_url: "https://gitlab.example.com/test-group/test-project/-/merge_requests/1",
+    web_url:
+      "https://gitlab.example.com/test-group/test-project/-/merge_requests/1",
   },
 ];
 
 // Tests using mock data to validate type structures
 Deno.test("Mock - Project structure validation", () => {
   const project = MOCK_PROJECTS[0];
-  
+
   assertExists(project.id);
   assertExists(project.name);
   assertExists(project.path);
   assertExists(project.web_url);
-  
+
   assertEquals(typeof project.id, "number");
   assertEquals(typeof project.name, "string");
   assertEquals(typeof project.description, "string");
-  
+
   console.log(`  ✓ Project structure: ${project.name}`);
 });
 
 Deno.test("Mock - Issue structure validation", () => {
   const issue = MOCK_OPEN_ISSUES[0];
-  
+
   assertExists(issue.id);
   assertExists(issue.iid);
   assertExists(issue.title);
@@ -131,13 +135,13 @@ Deno.test("Mock - Issue structure validation", () => {
   assertExists(issue.author.username);
   assertExists(issue.created_at);
   assertExists(issue.updated_at);
-  
+
   assertEquals(typeof issue.id, "number");
   assertEquals(typeof issue.iid, "number");
   assertEquals(typeof issue.title, "string");
   assertEquals(issue.state, "opened");
   assertEquals(Array.isArray(issue.labels), true);
-  
+
   console.log(`  ✓ Issue structure: #${issue.iid} "${issue.title}"`);
 });
 
@@ -146,18 +150,20 @@ Deno.test("Mock - Issue state filtering", () => {
   for (const issue of MOCK_OPEN_ISSUES) {
     assertEquals(issue.state, "opened");
   }
-  
+
   // Verify closed issues
   for (const issue of MOCK_CLOSED_ISSUES) {
     assertEquals(issue.state, "closed");
   }
-  
-  console.log(`  ✓ State filtering: ${MOCK_OPEN_ISSUES.length} opened, ${MOCK_CLOSED_ISSUES.length} closed`);
+
+  console.log(
+    `  ✓ State filtering: ${MOCK_OPEN_ISSUES.length} opened, ${MOCK_CLOSED_ISSUES.length} closed`,
+  );
 });
 
 Deno.test("Mock - MergeRequest structure validation", () => {
   const mr = MOCK_MERGE_REQUESTS[0];
-  
+
   assertExists(mr.id);
   assertExists(mr.iid);
   assertExists(mr.title);
@@ -165,30 +171,30 @@ Deno.test("Mock - MergeRequest structure validation", () => {
   assertExists(mr.source_branch);
   assertExists(mr.target_branch);
   assertExists(mr.author);
-  
+
   assertEquals(typeof mr.id, "number");
   assertEquals(typeof mr.iid, "number");
   assertEquals(typeof mr.title, "string");
   assertEquals(mr.state, "opened");
-  
+
   console.log(`  ✓ MR structure: !${mr.iid} "${mr.title}"`);
   console.log(`    ${mr.source_branch} → ${mr.target_branch}`);
 });
 
 Deno.test("Mock - Date format validation", () => {
   const issue = MOCK_OPEN_ISSUES[0];
-  
+
   // Verify ISO 8601 format
   const createdDate = new Date(issue.created_at);
   const updatedDate = new Date(issue.updated_at);
-  
+
   assertEquals(createdDate.toISOString(), issue.created_at);
   assertEquals(updatedDate.toISOString(), issue.updated_at);
-  
+
   // Verify date is valid
   assertEquals(isNaN(createdDate.getTime()), false);
   assertEquals(isNaN(updatedDate.getTime()), false);
-  
+
   console.log(`  ✓ Date format: ${issue.created_at}`);
   console.log(`    Created: ${createdDate.toLocaleString()}`);
 });
@@ -197,22 +203,24 @@ Deno.test("Mock - Array types validation", () => {
   // Projects
   assertEquals(Array.isArray(MOCK_PROJECTS), true);
   assertEquals(MOCK_PROJECTS.length, 2);
-  
+
   // Issues
   assertEquals(Array.isArray(MOCK_OPEN_ISSUES), true);
   assertEquals(MOCK_OPEN_ISSUES.length, 2);
-  
+
   // Merge Requests
   assertEquals(Array.isArray(MOCK_MERGE_REQUESTS), true);
   assertEquals(MOCK_MERGE_REQUESTS.length, 1);
-  
-  console.log(`  ✓ Array types: ${MOCK_PROJECTS.length} projects, ${MOCK_OPEN_ISSUES.length} issues, ${MOCK_MERGE_REQUESTS.length} MRs`);
+
+  console.log(
+    `  ✓ Array types: ${MOCK_PROJECTS.length} projects, ${MOCK_OPEN_ISSUES.length} issues, ${MOCK_MERGE_REQUESTS.length} MRs`,
+  );
 });
 
 Deno.test("Mock - Author structure validation", () => {
   const issue = MOCK_OPEN_ISSUES[0];
   const mr = MOCK_MERGE_REQUESTS[0];
-  
+
   // Issue author
   assertExists(issue.author);
   assertExists(issue.author.id);
@@ -221,13 +229,13 @@ Deno.test("Mock - Author structure validation", () => {
   assertEquals(typeof issue.author.id, "number");
   assertEquals(typeof issue.author.name, "string");
   assertEquals(typeof issue.author.username, "string");
-  
+
   // MR author
   assertExists(mr.author);
   assertExists(mr.author.name);
   assertExists(mr.author.username);
   assertEquals(typeof mr.author.name, "string");
   assertEquals(typeof mr.author.username, "string");
-  
+
   console.log(`  ✓ Author structures validated`);
 });

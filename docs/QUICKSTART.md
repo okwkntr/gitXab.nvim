@@ -5,6 +5,7 @@ GitXab.vimでGitHubとGitLabを使い始めるための最速ガイド。
 ## 1. インストール
 
 ### 必要なもの
+
 - Neovim 0.7+
 - Deno 1.x
 - denops.vim
@@ -38,12 +39,14 @@ return {
 ## 2. トークンの取得
 
 ### GitHub
+
 1. https://github.com/settings/tokens にアクセス
 2. "Generate new token (classic)" をクリック
 3. スコープを選択: `repo`, `read:user`
 4. トークンを生成してコピー
 
 ### GitLab
+
 1. https://gitlab.com/-/profile/personal_access_tokens にアクセス
 2. "Add new token" をクリック
 3. スコープを選択: `api`, `read_user`, `read_api`
@@ -75,6 +78,7 @@ return {
 ```
 
 **キー操作:**
+
 - `<Enter>` - プロジェクトメニューを開く
 - `q` - 閉じる
 
@@ -92,6 +96,7 @@ return {
 ```
 
 **キー操作:**
+
 - `<Enter>` - イシュー詳細を表示
 - `n` - 新しいイシューを作成
 - `r` - リストを更新
@@ -108,6 +113,7 @@ return {
 ```
 
 **キー操作:**
+
 - `<Enter>` - PR/MR詳細を表示
 - `n` - 新しいPR/MRを作成
 - `d` - 差分を表示（詳細画面から）
@@ -241,15 +247,15 @@ export GITLAB_TOKEN="glpat_your_gitlab_token"
 
 ## 利用可能なコマンド一覧
 
-| コマンド | 説明 |
-|---------|------|
-| `:GitXabProjects [search]` | プロジェクト/リポジトリ一覧 |
-| `:GitXabIssues <id> [state]` | イシュー一覧 |
-| `:GitXabCreateIssue <id>` | 新しいイシューを作成 |
-| `:GitXabMRs <id>` | マージリクエスト/プルリクエスト一覧 |
-| `:GitXabCreateMR <id>` | 新しいMR/PRを作成 |
-| `:GitXabSetProvider github\|gitlab` | プロバイダーを切り替え |
-| `:GitXabShowProvider` | 現在のプロバイダーを表示 |
+| コマンド                            | 説明                                |
+| ----------------------------------- | ----------------------------------- |
+| `:GitXabProjects [search]`          | プロジェクト/リポジトリ一覧         |
+| `:GitXabIssues <id> [state]`        | イシュー一覧                        |
+| `:GitXabCreateIssue <id>`           | 新しいイシューを作成                |
+| `:GitXabMRs <id>`                   | マージリクエスト/プルリクエスト一覧 |
+| `:GitXabCreateMR <id>`              | 新しいMR/PRを作成                   |
+| `:GitXabSetProvider github\|gitlab` | プロバイダーを切り替え              |
+| `:GitXabShowProvider`               | 現在のプロバイダーを表示            |
 
 ---
 

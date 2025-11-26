@@ -1,29 +1,29 @@
 /**
  * GitHub Provider Converter
- * 
+ *
  * Converts GitHub API responses to unified provider data models.
- * 
+ *
  * @module
  */
 
 import type {
-  Repository,
+  Branch,
+  Comment,
+  FileDiff,
   Issue,
   PullRequest,
-  Comment,
-  Branch,
-  User,
-  FileDiff,
   PullRequestDiff,
+  Repository,
+  User,
 } from "./provider.ts";
 import type {
-  GitHubRepository,
+  GitHubBranch,
+  GitHubComment,
+  GitHubFile,
   GitHubIssue,
   GitHubPullRequest,
-  GitHubComment,
-  GitHubBranch,
+  GitHubRepository,
   GitHubUser,
-  GitHubFile,
 } from "../models/github.ts";
 import { BaseConverter, ConversionError } from "../models/common.ts";
 
@@ -53,7 +53,7 @@ export class GitHubConverter extends BaseConverter {
         "github",
         "repository",
         error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -71,9 +71,8 @@ export class GitHubConverter extends BaseConverter {
         state: this.normalizeState(issue.state),
         author: this.convertUser(issue.user),
         assignees: issue.assignees?.map((a) => this.convertUser(a)) || [],
-        labels: issue.labels?.map((l) => 
-          typeof l === "string" ? l : l.name
-        ) || [],
+        labels: issue.labels?.map((l) => typeof l === "string" ? l : l.name) ||
+          [],
         createdAt: issue.created_at,
         updatedAt: issue.updated_at,
         closedAt: issue.closed_at || null,
@@ -84,7 +83,7 @@ export class GitHubConverter extends BaseConverter {
         "github",
         "issue",
         error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -115,7 +114,7 @@ export class GitHubConverter extends BaseConverter {
         "github",
         "pullRequest",
         error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -138,7 +137,7 @@ export class GitHubConverter extends BaseConverter {
         "github",
         "comment",
         error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -159,7 +158,7 @@ export class GitHubConverter extends BaseConverter {
         "github",
         "branch",
         error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -197,7 +196,7 @@ export class GitHubConverter extends BaseConverter {
         "github",
         "fileDiff",
         error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -208,7 +207,7 @@ export class GitHubConverter extends BaseConverter {
   convertPullRequestDiff(files: GitHubFile[]): PullRequestDiff {
     try {
       const fileDiffs = files.map((f) => this.convertFileDiff(f));
-      
+
       return {
         files: fileDiffs,
         totalAdditions: files.reduce((sum, f) => sum + f.additions, 0),
@@ -219,7 +218,7 @@ export class GitHubConverter extends BaseConverter {
         "github",
         "pullRequestDiff",
         error instanceof Error ? error.message : String(error),
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }

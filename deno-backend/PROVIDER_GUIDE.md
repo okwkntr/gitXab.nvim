@@ -162,7 +162,7 @@ await provider.createComment("owner/repo", 123, "Great work!");
 const branches = await provider.listBranches("owner/repo");
 
 // デフォルトブランチを見つける
-const defaultBranch = branches.find(b => b.default);
+const defaultBranch = branches.find((b) => b.default);
 console.log(`Default branch: ${defaultBranch?.name}`);
 ```
 
@@ -172,26 +172,46 @@ console.log(`Default branch: ${defaultBranch?.name}`);
 
 ```typescript
 interface Provider {
-  readonly name: 'gitlab' | 'github';
+  readonly name: "gitlab" | "github";
   readonly baseUrl: string;
-  
+
   listRepositories(query?: string): Promise<Repository[]>;
   getRepository(id: string | number): Promise<Repository>;
-  
+
   listIssues(repoId: string | number, state?: string): Promise<Issue[]>;
   getIssue(repoId: string | number, issueNumber: number): Promise<Issue>;
-  createIssue(repoId: string | number, params: CreateIssueParams): Promise<Issue>;
-  updateIssue(repoId: string | number, issueNumber: number, params: UpdateIssueParams): Promise<Issue>;
-  
-  listPullRequests(repoId: string | number, state?: string): Promise<PullRequest[]>;
+  createIssue(
+    repoId: string | number,
+    params: CreateIssueParams,
+  ): Promise<Issue>;
+  updateIssue(
+    repoId: string | number,
+    issueNumber: number,
+    params: UpdateIssueParams,
+  ): Promise<Issue>;
+
+  listPullRequests(
+    repoId: string | number,
+    state?: string,
+  ): Promise<PullRequest[]>;
   getPullRequest(repoId: string | number, number: number): Promise<PullRequest>;
-  createPullRequest(repoId: string | number, params: CreatePullRequestParams): Promise<PullRequest>;
-  
+  createPullRequest(
+    repoId: string | number,
+    params: CreatePullRequestParams,
+  ): Promise<PullRequest>;
+
   getComments(repoId: string | number, issueNumber: number): Promise<Comment[]>;
-  createComment(repoId: string | number, issueNumber: number, body: string): Promise<Comment>;
-  
+  createComment(
+    repoId: string | number,
+    issueNumber: number,
+    body: string,
+  ): Promise<Comment>;
+
   listBranches(repoId: string | number): Promise<Branch[]>;
-  getPullRequestDiff(repoId: string | number, number: number): Promise<PullRequestDiff>;
+  getPullRequestDiff(
+    repoId: string | number,
+    number: number,
+  ): Promise<PullRequestDiff>;
 }
 ```
 

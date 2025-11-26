@@ -1,11 +1,12 @@
 # data-model.md
 
-**Feature**: GitLab Vim Integration  
+**Feature**: GitLab Vim Integration\
 **Date**: 2025-11-03
 
 ## Key Entities
 
 ### Project
+
 - id: integer (GitLab project id)
 - name: string
 - path: string
@@ -14,6 +15,7 @@
 - web_url: string
 
 ### Issue
+
 - id: integer
 - iid: integer (project-scoped id)
 - project_id: integer
@@ -27,6 +29,7 @@
 - updated_at: string (ISO8601)
 
 ### MergeRequest
+
 - id: integer
 - iid: integer
 - project_id: integer
@@ -38,6 +41,7 @@
 - created_at / updated_at
 
 ### Comment
+
 - id: integer
 - note: string (Markdown)
 - author: User
@@ -46,28 +50,33 @@
 - resolved: boolean (MR diff comments)
 
 ### User
+
 - id: integer
 - username: string
 - name: string
 - avatar_url: string
 
 ### DiffFile
+
 - old_path: string
 - new_path: string
 - a_mode / b_mode
 - hunks: [Hunk]
 
 ### Hunk
+
 - old_start, old_lines
 - new_start, new_lines
 - lines: [ { type: '+', '-', ' ' , content: string, line_number } ]
 
 ## Validation rules
+
 - IDs must be integers
 - timestamps ISO8601
 - titles non-empty
 
 ## State transitions
+
 - Issue: opened -> closed -> reopened
 - MR: opened -> merged | closed
 

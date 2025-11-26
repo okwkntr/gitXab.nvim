@@ -1,21 +1,26 @@
 # Security Guide
 
-This document outlines security best practices and guidelines for using GitXab.vim.
+This document outlines security best practices and guidelines for using
+GitXab.vim.
 
 ## Token Security
 
 ### Personal Access Token Requirements
 
-GitLab Personal Access Tokens (PATs) are the primary authentication method for GitXab.vim.
+GitLab Personal Access Tokens (PATs) are the primary authentication method for
+GitXab.vim.
 
 **Required Scopes:**
+
 - `api` - Full API access (required for all operations)
 
 **Optional but Recommended Scopes:**
+
 - `read_user` - Read user information
 - `read_repository` - Read repository information
 
 **Security Recommendations:**
+
 1. Create tokens with minimum required scopes
 2. Use different tokens for different purposes
 3. Set expiration dates (e.g., 90 days)
@@ -27,23 +32,27 @@ GitLab Personal Access Tokens (PATs) are the primary authentication method for G
 #### Method 1: Environment Variables (Current - Recommended)
 
 **Setup:**
+
 ```bash
 # In ~/.bashrc, ~/.zshrc, or similar
 export GITLAB_TOKEN='glpat-xxxxxxxxxxxxxxxxxxxx'
 ```
 
 **Pros:**
+
 - Simple to set up
 - Works across all sessions
 - Not stored in version control
 - Standard practice
 
 **Cons:**
+
 - Visible in process environment
 - Accessible to all processes run by user
 - Not encrypted at rest
 
 **Security Tips:**
+
 - Never echo or print the variable unnecessarily
 - Use shell history settings to prevent token exposure
 - Clear history after setting: `history -d $(history 1)`
@@ -53,16 +62,19 @@ export GITLAB_TOKEN='glpat-xxxxxxxxxxxxxxxxxxxx'
 **Planned Location:** `~/.config/gitxab/config.json`
 
 **Pros:**
+
 - Centralized configuration
 - Can be encrypted
 - Per-project overrides possible
 
 **Cons:**
+
 - File permissions critical
 - Risk of accidental commits
 - Must be managed separately
 
 **Security Requirements:**
+
 - File permissions: `chmod 600 ~/.config/gitxab/config.json`
 - Owner only read/write
 - Never commit to version control
@@ -71,17 +83,20 @@ export GITLAB_TOKEN='glpat-xxxxxxxxxxxxxxxxxxxx'
 #### Method 3: OS Keyring Integration (Future - Most Secure)
 
 **Planned Support:**
+
 - Linux: `libsecret` (GNOME Keyring, KWallet)
 - macOS: Keychain
 - Windows: Credential Manager
 
 **Pros:**
+
 - Encrypted at rest
 - OS-managed security
 - Integration with system auth
 - Protected against memory dumps
 
 **Cons:**
+
 - Requires additional dependencies
 - Platform-specific implementation
 - Initial setup more complex
@@ -112,6 +127,7 @@ export GITLAB_TOKEN='glpat-xxxxxxxxxxxxxxxxxxxx'
 ### What to Do If Token is Compromised
 
 **Immediate Actions:**
+
 1. Revoke the token in GitLab (Settings → Access Tokens)
 2. Generate a new token
 3. Update environment variables/configuration
@@ -119,6 +135,7 @@ export GITLAB_TOKEN='glpat-xxxxxxxxxxxxxxxxxxxx'
 5. Check recent API activity for the token
 
 **Prevention:**
+
 1. Never commit tokens to version control
 2. Don't paste tokens in chat/email
 3. Use token names without revealing purpose
@@ -135,6 +152,7 @@ GitXab.vim always uses HTTPS for API communication:
 - Self-signed certificates rejected (unless configured)
 
 **Custom CA Certificates (Future):**
+
 ```lua
 vim.env.GITLAB_CA_CERT = '/path/to/custom-ca.pem'
 ```
@@ -168,11 +186,13 @@ vim.g.gitxab = {
 ### What Data is Stored
 
 **In Memory:**
+
 - API responses (temporary)
 - ETag cache (temporary)
 - Buffer contents (temporary)
 
 **On Disk:**
+
 - Nothing currently
 - Future: Optional persistent cache
 - Future: Configuration file (if used)
@@ -180,12 +200,14 @@ vim.g.gitxab = {
 ### What Data is Transmitted
 
 **To GitLab API:**
+
 - Authentication token (in headers)
 - API requests (projects, issues, MRs)
 - User-created content (comments, descriptions)
 - Search queries
 
 **Not Transmitted:**
+
 - Local file contents
 - Other environment variables
 - System information
@@ -194,6 +216,7 @@ vim.g.gitxab = {
 ### Third-Party Data Sharing
 
 GitXab.vim does NOT:
+
 - Send telemetry
 - Phone home
 - Share data with third parties
@@ -205,6 +228,7 @@ GitXab.vim does NOT:
 ### Neovim Configuration
 
 **DO:**
+
 ```lua
 -- Read from environment
 vim.env.GITLAB_TOKEN = os.getenv('GITLAB_TOKEN')
@@ -214,6 +238,7 @@ local config = require('gitxab.config').load()
 ```
 
 **DON'T:**
+
 ```lua
 -- NEVER hardcode tokens
 vim.env.GITLAB_TOKEN = 'glpat-xxxxxxxxxxxxxxxxxxxx'  -- ❌ BAD
@@ -225,6 +250,7 @@ vim.g.gitlab_token = 'glpat-xxxxxxxxxxxxxxxxxxxx'   -- ❌ BAD
 ### Version Control
 
 **Required `.gitignore` entries:**
+
 ```gitignore
 # GitXab configuration
 .config/gitxab/config.json
@@ -239,6 +265,7 @@ vim.g.gitlab_token = 'glpat-xxxxxxxxxxxxxxxxxxxx'   -- ❌ BAD
 ```
 
 **Pre-commit Hook (Recommended):**
+
 ```bash
 #!/bin/bash
 # .git/hooks/pre-commit
@@ -256,12 +283,14 @@ fi
 ### File Permissions
 
 **Configuration file (future):**
+
 ```bash
 chmod 600 ~/.config/gitxab/config.json
 chown $USER:$USER ~/.config/gitxab/config.json
 ```
 
 **Cache directory (future):**
+
 ```bash
 chmod 700 ~/.cache/gitxab/
 ```
@@ -280,10 +309,12 @@ On shared systems:
 ### GitLab API Rate Limits
 
 **GitLab.com:**
+
 - 2000 requests per minute per token
 - 10 requests per second per token
 
 **Self-Hosted:**
+
 - Configurable by administrator
 - Check with your GitLab admin
 
@@ -340,6 +371,7 @@ If you discover a security vulnerability:
 ### GDPR (EU)
 
 GitXab.vim:
+
 - Processes minimal personal data
 - No data retention beyond session
 - No cross-border transfers (data stays with GitLab)
@@ -367,6 +399,7 @@ For organizations with compliance requirements:
 ## Security Checklist
 
 ### Initial Setup
+
 - [ ] Create token with minimal scopes
 - [ ] Set token expiration date
 - [ ] Store token in environment variable
@@ -375,6 +408,7 @@ For organizations with compliance requirements:
 - [ ] Add config to .gitignore
 
 ### Regular Maintenance
+
 - [ ] Review active tokens monthly
 - [ ] Rotate tokens every 90 days
 - [ ] Check GitLab audit logs
@@ -383,6 +417,7 @@ For organizations with compliance requirements:
 - [ ] Verify no token leaks in logs
 
 ### Incident Response
+
 - [ ] Document incident response plan
 - [ ] Know how to revoke tokens quickly
 - [ ] Have token rotation procedure

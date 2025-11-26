@@ -9,11 +9,13 @@ This guide covers all configuration options for GitXab.vim.
 GitXab.vim requires a GitLab Personal Access Token for API access.
 
 **Environment Variable (Recommended):**
+
 ```bash
 export GITLAB_TOKEN='your-gitlab-personal-access-token'
 ```
 
 **Neovim Configuration:**
+
 ```lua
 vim.env.GITLAB_TOKEN = 'your-gitlab-personal-access-token'
 ```
@@ -118,12 +120,14 @@ vim.api.nvim_create_autocmd('BufLeave', {
 ### Token Storage
 
 **DO:**
+
 - Store tokens in environment variables
 - Use OS keyring integration (future feature)
 - Restrict token permissions to minimum required scopes
 - Rotate tokens regularly
 
 **DON'T:**
+
 - Commit tokens to version control
 - Share tokens with others
 - Use tokens with excessive permissions
@@ -132,13 +136,15 @@ vim.api.nvim_create_autocmd('BufLeave', {
 ### Token Scopes
 
 Required GitLab token scopes:
+
 - `api` - Full API access (required for all operations)
 - `read_user` - Read user information (optional but recommended)
 - `read_repository` - Read repository information (optional but recommended)
 
 ### Network Security
 
-GitXab.vim always uses HTTPS for API communication. Ensure your GitLab instance has valid SSL/TLS certificates.
+GitXab.vim always uses HTTPS for API communication. Ensure your GitLab instance
+has valid SSL/TLS certificates.
 
 ## Performance Tuning
 
@@ -151,6 +157,7 @@ GitXab.vim implements ETag-based caching for improved performance:
 - Stale cache entries are refreshed automatically
 
 **Future Configuration Options:**
+
 ```json
 {
   "cacheEnabled": true,
@@ -162,6 +169,7 @@ GitXab.vim implements ETag-based caching for improved performance:
 ### Network Timeouts
 
 **Future Configuration Options:**
+
 ```json
 {
   "timeout": 30000,
@@ -178,6 +186,7 @@ Large result sets are automatically paginated:
 - Maximum page size: 100 items (GitLab API limit)
 
 **Future Configuration Options:**
+
 ```json
 {
   "pageSize": 20,
@@ -209,7 +218,8 @@ GitXab.vim uses standard Vim/Neovim syntax highlighting:
 
 ### Color Scheme Integration
 
-GitXab.vim respects your current color scheme. Status indicators use standard highlight groups:
+GitXab.vim respects your current color scheme. Status indicators use standard
+highlight groups:
 
 - 🟢 Opened - Uses default green/success color
 - 🟣 Merged - Uses default purple/info color
@@ -220,6 +230,7 @@ GitXab.vim respects your current color scheme. Status indicators use standard hi
 ### Enable Debug Logging
 
 **Future Feature:**
+
 ```lua
 vim.g.gitxab_debug = true
 vim.g.gitxab_log_file = '~/.cache/gitxab/debug.log'
@@ -236,26 +247,29 @@ Verify GitXab.vim installation:
 ### Common Issues
 
 **Slow Performance:**
+
 - Check network latency to GitLab
 - Verify caching is working
 - Reduce page size for large result sets
 
 **Authentication Errors:**
+
 - Verify token is set correctly
 - Check token hasn't expired
 - Ensure token has required scopes
 
 **Display Issues:**
+
 - Check terminal supports Unicode (for status icons)
 - Verify color scheme is loaded
 - Try reloading the buffer with `r`
 
 ## Environment Variables Reference
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `GITLAB_TOKEN` | Yes | - | Personal Access Token |
-| `GITLAB_BASE_URL` | No | `https://gitlab.com/api/v4` | API base URL |
+| Variable          | Required | Default                     | Description           |
+| ----------------- | -------- | --------------------------- | --------------------- |
+| `GITLAB_TOKEN`    | Yes      | -                           | Personal Access Token |
+| `GITLAB_BASE_URL` | No       | `https://gitlab.com/api/v4` | API base URL          |
 
 ## Future Configuration Options
 

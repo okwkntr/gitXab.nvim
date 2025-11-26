@@ -1,9 +1,9 @@
 /**
  * GitHub API Types
- * 
+ *
  * Type definitions for GitHub REST API v3 responses.
  * Based on https://docs.github.com/en/rest
- * 
+ *
  * @module
  */
 
@@ -12,12 +12,12 @@
  */
 export interface GitHubUser {
   id: number;
-  login: string;  // username
+  login: string; // username
   name?: string;
   avatar_url: string;
   url: string;
   html_url: string;
-  type: 'User' | 'Organization';
+  type: "User" | "Organization";
 }
 
 /**
@@ -28,7 +28,7 @@ export interface GitHubOwner {
   login: string;
   avatar_url: string;
   url: string;
-  type: 'User' | 'Organization';
+  type: "User" | "Organization";
 }
 
 /**
@@ -37,7 +37,7 @@ export interface GitHubOwner {
 export interface GitHubRepository {
   id: number;
   name: string;
-  full_name: string;  // "owner/repo"
+  full_name: string; // "owner/repo"
   owner: GitHubOwner;
   description: string | null;
   html_url: string;
@@ -80,7 +80,7 @@ export interface GitHubMilestone {
   number: number;
   title: string;
   description: string | null;
-  state: 'open' | 'closed';
+  state: "open" | "closed";
   created_at: string;
   updated_at: string;
   due_on: string | null;
@@ -95,7 +95,7 @@ export interface GitHubIssue {
   number: number;
   title: string;
   body: string | null;
-  state: 'open' | 'closed';
+  state: "open" | "closed";
   user: GitHubUser;
   labels: GitHubLabel[];
   assignees: GitHubUser[];
@@ -107,7 +107,7 @@ export interface GitHubIssue {
   url: string;
   comments: number;
   locked: boolean;
-  
+
   // These fields exist for PRs but not for issues
   pull_request?: {
     url: string;
@@ -125,7 +125,7 @@ export interface GitHubPullRequest {
   number: number;
   title: string;
   body: string | null;
-  state: 'open' | 'closed';
+  state: "open" | "closed";
   user: GitHubUser;
   labels: GitHubLabel[];
   assignees: GitHubUser[];
@@ -136,21 +136,21 @@ export interface GitHubPullRequest {
   merged_at: string | null;
   html_url: string;
   url: string;
-  
+
   // PR-specific fields
   head: {
-    ref: string;  // source branch
+    ref: string; // source branch
     sha: string;
     repo: GitHubRepository | null;
     user: GitHubUser;
   };
   base: {
-    ref: string;  // target branch
+    ref: string; // target branch
     sha: string;
     repo: GitHubRepository;
     user: GitHubUser;
   };
-  
+
   draft: boolean;
   merged: boolean;
   mergeable: boolean | null;
@@ -229,7 +229,14 @@ export interface GitHubCommit {
  */
 export interface GitHubFile {
   filename: string;
-  status: 'added' | 'removed' | 'modified' | 'renamed' | 'copied' | 'changed' | 'unchanged';
+  status:
+    | "added"
+    | "removed"
+    | "modified"
+    | "renamed"
+    | "copied"
+    | "changed"
+    | "unchanged";
   additions: number;
   deletions: number;
   changes: number;
@@ -257,12 +264,12 @@ export interface GitHubError {
  * GitHub API Response Headers
  */
 export interface GitHubHeaders {
-  'x-ratelimit-limit'?: string;
-  'x-ratelimit-remaining'?: string;
-  'x-ratelimit-reset'?: string;
-  'x-ratelimit-used'?: string;
-  'x-ratelimit-resource'?: string;
-  link?: string;  // Pagination links
+  "x-ratelimit-limit"?: string;
+  "x-ratelimit-remaining"?: string;
+  "x-ratelimit-reset"?: string;
+  "x-ratelimit-used"?: string;
+  "x-ratelimit-resource"?: string;
+  link?: string; // Pagination links
   etag?: string;
 }
 
@@ -292,7 +299,7 @@ export interface CreateGitHubIssueParams {
 export interface UpdateGitHubIssueParams {
   title?: string;
   body?: string;
-  state?: 'open' | 'closed';
+  state?: "open" | "closed";
   labels?: string[];
   assignees?: string[];
   milestone?: number | null;
@@ -304,8 +311,8 @@ export interface UpdateGitHubIssueParams {
 export interface CreateGitHubPullRequestParams {
   title: string;
   body?: string;
-  head: string;  // source branch (or "username:branch" for forks)
-  base: string;  // target branch
+  head: string; // source branch (or "username:branch" for forks)
+  base: string; // target branch
   draft?: boolean;
   maintainer_can_modify?: boolean;
 }

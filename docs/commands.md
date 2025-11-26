@@ -9,15 +9,18 @@ This document describes all available commands in GitXab.vim.
 List all accessible GitLab projects.
 
 **Arguments:**
+
 - `search_query` (optional): Filter projects by name or description
 
 **Example:**
+
 ```vim
 :GitXabProjects
 :GitXabProjects myproject
 ```
 
 **Keyboard Shortcuts in Project List:**
+
 - `<CR>` (Enter) - Open project menu
 - `i` - View project issues
 - `m` - View project merge requests
@@ -26,6 +29,7 @@ List all accessible GitLab projects.
 - `q` - Close buffer
 
 **Project Menu Options:**
+
 1. View Issues
 2. Create New Issue
 3. View Merge Requests
@@ -38,14 +42,17 @@ List all accessible GitLab projects.
 List all issues for a specific project.
 
 **Arguments:**
+
 - `project_id` (required): GitLab project ID
 
 **Example:**
+
 ```vim
 :GitXabIssues 123
 ```
 
 **Keyboard Shortcuts in Issue List:**
+
 - `<CR>` (Enter) - View issue details
 - `n` - Create new issue
 - `r` - Reload issue list
@@ -57,14 +64,17 @@ List all issues for a specific project.
 Create a new issue for a project.
 
 **Arguments:**
+
 - `project_id` (required): GitLab project ID
 
 **Example:**
+
 ```vim
 :GitXabCreateIssue 123
 ```
 
 **Form Fields:**
+
 - Title (required)
 - Description (markdown supported)
 - Labels (comma-separated)
@@ -74,6 +84,7 @@ The form opens in a temporary buffer. Save with `:w` to create the issue.
 ### Issue Detail View
 
 **Keyboard Shortcuts:**
+
 - `e` - Edit issue (title, description, labels, state)
 - `c` - Add comment
 - `R` - Reply to discussion thread
@@ -82,6 +93,7 @@ The form opens in a temporary buffer. Save with `:w` to create the issue.
 - `q` - Close buffer
 
 **Replying to Comments:**
+
 1. Position cursor on the discussion/comment you want to reply to
 2. Press `R`
 3. A temporary markdown file opens for your reply
@@ -95,19 +107,23 @@ The form opens in a temporary buffer. Save with `:w` to create the issue.
 List all merge requests for a specific project.
 
 **Arguments:**
+
 - `project_id` (required): GitLab project ID
 
 **Example:**
+
 ```vim
 :GitXabMRs 123
 ```
 
 **Status Indicators:**
+
 - 🟢 - Opened
 - 🟣 - Merged
 - 🔴 - Closed
 
 **Keyboard Shortcuts in MR List:**
+
 - `<CR>` (Enter) - View MR details
 - `n` - Create new merge request
 - `r` - Reload MR list
@@ -119,14 +135,17 @@ List all merge requests for a specific project.
 Create a new merge request.
 
 **Arguments:**
+
 - `project_id` (required): GitLab project ID
 
 **Example:**
+
 ```vim
 :GitXabCreateMR 123
 ```
 
 **Form Fields:**
+
 - Source Branch (required) - Select from remote branches list
 - Target Branch (required) - Defaults to project's default branch
 - Title (required)
@@ -139,6 +158,7 @@ The form opens in a temporary buffer. Save with `:w` to create the MR.
 ### MR Detail View
 
 **Keyboard Shortcuts:**
+
 - `d` - View diffs/file changes
 - `c` - Add comment
 - `R` - Reply to discussion thread
@@ -151,18 +171,21 @@ The form opens in a temporary buffer. Save with `:w` to create the MR.
 Displays all file changes in the merge request with unified diff format.
 
 **File Status Indicators:**
+
 - `NEW` - New file added
 - `DELETED` - File removed
 - `RENAMED` - File renamed (shows old → new path)
 - `MODIFIED` - File modified
 
 **Diff Markers:**
+
 - `@@` - Hunk header (shows line numbers)
 - `+` - Added lines (green)
 - `-` - Removed lines (red)
-- ` ` (space) - Context lines (unchanged)
+- `` (space) - Context lines (unchanged)
 
 **Keyboard Shortcuts:**
+
 - `r` - Reload diffs
 - `?` - Show keyboard shortcuts help
 - `q` - Close buffer
@@ -180,6 +203,7 @@ These shortcuts work across all GitXab buffers:
 ### Working with Long Text
 
 When editing descriptions or comments:
+
 1. The plugin opens a temporary markdown file
 2. Write your content (supports full markdown syntax)
 3. Save with `:w` to submit
@@ -195,6 +219,7 @@ When editing descriptions or comments:
 ### Buffer Management
 
 GitXab.vim implements smart buffer reuse:
+
 - Reloading a view updates the existing buffer
 - No duplicate windows are created
 - Buffers are properly cleaned up when closed

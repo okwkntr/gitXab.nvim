@@ -1,27 +1,27 @@
 /**
  * GitHub API Client
- * 
+ *
  * This module provides a client for interacting with the GitHub REST API v3.
- * 
+ *
  * Features:
  * - Authentication with Personal Access Tokens
  * - Automatic retry with exponential backoff
  * - Rate limit handling
  * - Error handling with detailed error messages
- * 
+ *
  * @module
  */
 
 import type {
-  GitHubRepository,
+  CreateGitHubIssueParams,
+  CreateGitHubPullRequestParams,
+  GitHubBranch,
+  GitHubComment,
+  GitHubFile,
   GitHubIssue,
   GitHubPullRequest,
-  GitHubComment,
-  GitHubBranch,
-  GitHubFile,
-  CreateGitHubIssueParams,
+  GitHubRepository,
   UpdateGitHubIssueParams,
-  CreateGitHubPullRequestParams,
   UpdateGitHubPullRequestParams,
 } from "../models/github.ts";
 
@@ -55,7 +55,7 @@ export class GitHubAPIError extends Error {
   constructor(
     message: string,
     public status: number,
-    public response?: GitHubError
+    public response?: GitHubError,
   ) {
     super(message);
     this.name = "GitHubAPIError";
@@ -101,7 +101,7 @@ export class GitHubClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = {
@@ -113,7 +113,7 @@ export class GitHubClient {
     };
 
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
         const response = await fetch(url, {
@@ -130,9 +130,11 @@ export class GitHubClient {
           if (resetTime) {
             const resetDate = new Date(parseInt(resetTime) * 1000);
             const waitTime = resetDate.getTime() - Date.now();
-            
+
             if (waitTime > 0 && attempt < this.maxRetries) {
-              console.warn(`Rate limited. Waiting ${waitTime}ms until ${resetDate.toISOString()}`);
+              console.warn(
+                `Rate limited. Waiting ${waitTime}ms until ${resetDate.toISOString()}`,
+              );
               await this.sleep(waitTime);
               continue;
             }
@@ -141,11 +143,13 @@ export class GitHubClient {
 
         // Handle error responses
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({})) as GitHubError;
+          const errorData = await response.json().catch(
+            () => ({}),
+          ) as GitHubError;
           throw new GitHubAPIError(
             errorData.message || `GitHub API error: ${response.status}`,
             response.status,
-            errorData
+            errorData,
           );
         }
 
@@ -158,19 +162,25 @@ export class GitHubClient {
         return data as T;
       } catch (error) {
         lastError = error as Error;
-        
+
         // Don't retry on client errors (4xx except 429)
-        if (error instanceof GitHubAPIError && 
-            error.status >= 400 && 
-            error.status < 500 && 
-            error.status !== 429) {
+        if (
+          error instanceof GitHubAPIError &&
+          error.status >= 400 &&
+          error.status < 500 &&
+          error.status !== 429
+        ) {
           throw error;
         }
 
         // Wait before retrying
         if (attempt < this.maxRetries) {
           const delay = this.retryDelay * Math.pow(2, attempt);
-          console.warn(`Request failed, retrying in ${delay}ms... (attempt ${attempt + 1}/${this.maxRetries})`);
+          console.warn(
+            `Request failed, retrying in ${delay}ms... (attempt ${
+              attempt + 1
+            }/${this.maxRetries})`,
+          );
           await this.sleep(delay);
         }
       }
@@ -219,15 +229,19 @@ export class GitHubClient {
   }): Promise<GitHubRepository[]> {
     const searchParams = new URLSearchParams();
     if (params?.visibility) searchParams.set("visibility", params.visibility);
-    if (params?.affiliation) searchParams.set("affiliation", params.affiliation);
+    if (params?.affiliation) {
+      searchParams.set("affiliation", params.affiliation);
+    }
     if (params?.sort) searchParams.set("sort", params.sort);
     if (params?.direction) searchParams.set("direction", params.direction);
-    if (params?.per_page) searchParams.set("per_page", params.per_page.toString());
+    if (params?.per_page) {
+      searchParams.set("per_page", params.per_page.toString());
+    }
     if (params?.page) searchParams.set("page", params.page.toString());
 
     const query = searchParams.toString();
     const endpoint = `/user/repos${query ? `?${query}` : ""}`;
-    
+
     return await this.request<GitHubRepository[]>(endpoint);
   }
 
@@ -256,20 +270,30 @@ export class GitHubClient {
     if (params?.sort) searchParams.set("sort", params.sort);
     if (params?.direction) searchParams.set("direction", params.direction);
     if (params?.since) searchParams.set("since", params.since);
-    if (params?.per_page) searchParams.set("per_page", params.per_page.toString());
+    if (params?.per_page) {
+      searchParams.set("per_page", params.per_page.toString());
+    }
     if (params?.page) searchParams.set("page", params.page.toString());
 
     const query = searchParams.toString();
-    const endpoint = `/repos/${owner}/${repo}/issues${query ? `?${query}` : ""}`;
-    
+    const endpoint = `/repos/${owner}/${repo}/issues${
+      query ? `?${query}` : ""
+    }`;
+
     return await this.request<GitHubIssue[]>(endpoint);
   }
 
   /**
    * Get a specific issue
    */
-  async getIssue(owner: string, repo: string, issueNumber: number): Promise<GitHubIssue> {
-    return await this.request<GitHubIssue>(`/repos/${owner}/${repo}/issues/${issueNumber}`);
+  async getIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GitHubIssue> {
+    return await this.request<GitHubIssue>(
+      `/repos/${owner}/${repo}/issues/${issueNumber}`,
+    );
   }
 
   /**
@@ -278,14 +302,14 @@ export class GitHubClient {
   async createIssue(
     owner: string,
     repo: string,
-    params: CreateGitHubIssueParams
+    params: CreateGitHubIssueParams,
   ): Promise<GitHubIssue> {
     return await this.request<GitHubIssue>(
       `/repos/${owner}/${repo}/issues`,
       {
         method: "POST",
         body: JSON.stringify(params),
-      }
+      },
     );
   }
 
@@ -296,14 +320,14 @@ export class GitHubClient {
     owner: string,
     repo: string,
     issueNumber: number,
-    params: UpdateGitHubIssueParams
+    params: UpdateGitHubIssueParams,
   ): Promise<GitHubIssue> {
     return await this.request<GitHubIssue>(
       `/repos/${owner}/${repo}/issues/${issueNumber}`,
       {
         method: "PATCH",
         body: JSON.stringify(params),
-      }
+      },
     );
   }
 
@@ -325,20 +349,28 @@ export class GitHubClient {
     if (params?.base) searchParams.set("base", params.base);
     if (params?.sort) searchParams.set("sort", params.sort);
     if (params?.direction) searchParams.set("direction", params.direction);
-    if (params?.per_page) searchParams.set("per_page", params.per_page.toString());
+    if (params?.per_page) {
+      searchParams.set("per_page", params.per_page.toString());
+    }
     if (params?.page) searchParams.set("page", params.page.toString());
 
     const query = searchParams.toString();
     const endpoint = `/repos/${owner}/${repo}/pulls${query ? `?${query}` : ""}`;
-    
+
     return await this.request<GitHubPullRequest[]>(endpoint);
   }
 
   /**
    * Get a specific pull request
    */
-  async getPullRequest(owner: string, repo: string, prNumber: number): Promise<GitHubPullRequest> {
-    return await this.request<GitHubPullRequest>(`/repos/${owner}/${repo}/pulls/${prNumber}`);
+  async getPullRequest(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<GitHubPullRequest> {
+    return await this.request<GitHubPullRequest>(
+      `/repos/${owner}/${repo}/pulls/${prNumber}`,
+    );
   }
 
   /**
@@ -347,14 +379,14 @@ export class GitHubClient {
   async createPullRequest(
     owner: string,
     repo: string,
-    params: CreateGitHubPullRequestParams
+    params: CreateGitHubPullRequestParams,
   ): Promise<GitHubPullRequest> {
     return await this.request<GitHubPullRequest>(
       `/repos/${owner}/${repo}/pulls`,
       {
         method: "POST",
         body: JSON.stringify(params),
-      }
+      },
     );
   }
 
@@ -365,23 +397,27 @@ export class GitHubClient {
     owner: string,
     repo: string,
     prNumber: number,
-    params: UpdateGitHubPullRequestParams
+    params: UpdateGitHubPullRequestParams,
   ): Promise<GitHubPullRequest> {
     return await this.request<GitHubPullRequest>(
       `/repos/${owner}/${repo}/pulls/${prNumber}`,
       {
         method: "PATCH",
         body: JSON.stringify(params),
-      }
+      },
     );
   }
 
   /**
    * List comments on an issue or pull request
    */
-  async listComments(owner: string, repo: string, issueNumber: number): Promise<GitHubComment[]> {
+  async listComments(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GitHubComment[]> {
     return await this.request<GitHubComment[]>(
-      `/repos/${owner}/${repo}/issues/${issueNumber}/comments`
+      `/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
     );
   }
 
@@ -392,14 +428,14 @@ export class GitHubClient {
     owner: string,
     repo: string,
     issueNumber: number,
-    body: string
+    body: string,
   ): Promise<GitHubComment> {
     return await this.request<GitHubComment>(
       `/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
       {
         method: "POST",
         body: JSON.stringify({ body }),
-      }
+      },
     );
   }
 
@@ -415,12 +451,16 @@ export class GitHubClient {
     if (params?.protected !== undefined) {
       searchParams.set("protected", params.protected.toString());
     }
-    if (params?.per_page) searchParams.set("per_page", params.per_page.toString());
+    if (params?.per_page) {
+      searchParams.set("per_page", params.per_page.toString());
+    }
     if (params?.page) searchParams.set("page", params.page.toString());
 
     const query = searchParams.toString();
-    const endpoint = `/repos/${owner}/${repo}/branches${query ? `?${query}` : ""}`;
-    
+    const endpoint = `/repos/${owner}/${repo}/branches${
+      query ? `?${query}` : ""
+    }`;
+
     return await this.request<GitHubBranch[]>(endpoint);
   }
 
@@ -434,22 +474,30 @@ export class GitHubClient {
     params?: {
       per_page?: number;
       page?: number;
-    }
+    },
   ): Promise<GitHubFile[]> {
     const searchParams = new URLSearchParams();
-    if (params?.per_page) searchParams.set("per_page", params.per_page.toString());
+    if (params?.per_page) {
+      searchParams.set("per_page", params.per_page.toString());
+    }
     if (params?.page) searchParams.set("page", params.page.toString());
 
     const query = searchParams.toString();
-    const endpoint = `/repos/${owner}/${repo}/pulls/${prNumber}/files${query ? `?${query}` : ""}`;
-    
+    const endpoint = `/repos/${owner}/${repo}/pulls/${prNumber}/files${
+      query ? `?${query}` : ""
+    }`;
+
     return await this.request<GitHubFile[]>(endpoint);
   }
 
   /**
    * Get the authenticated user
    */
-  async getAuthenticatedUser(): Promise<{ login: string; id: number; email?: string }> {
-    return await this.request<{ login: string; id: number; email?: string }>("/user");
+  async getAuthenticatedUser(): Promise<
+    { login: string; id: number; email?: string }
+  > {
+    return await this.request<{ login: string; id: number; email?: string }>(
+      "/user",
+    );
   }
 }

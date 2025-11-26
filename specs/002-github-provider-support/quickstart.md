@@ -12,7 +12,8 @@
 
 ### 1. GitHub Token取得
 
-1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+1. GitHub → Settings → Developer settings → Personal access tokens → Tokens
+   (classic)
 2. "Generate new token (classic)" をクリック
 3. 必要なスコープ:
    - ✅ `repo` - Full control of private repositories
@@ -86,6 +87,7 @@ touch deno-backend/src/models/github.ts
 ```
 
 **確認方法:**
+
 ```bash
 deno check deno-backend/src/providers/provider.ts
 deno check deno-backend/src/models/common.ts
@@ -103,6 +105,7 @@ deno test --allow-env --allow-net tests/unit/github_client_test.ts
 ```
 
 **動作確認:**
+
 ```bash
 # 簡単なテストスクリプト
 cat > test_github.ts << 'EOF'
@@ -132,13 +135,14 @@ touch deno-backend/src/providers/provider_factory.ts
 ```
 
 **確認方法:**
+
 ```typescript
 // test_provider.ts
 import { ProviderFactory } from "./deno-backend/src/providers/provider_factory.ts";
 
-const provider = ProviderFactory.create('github');
+const provider = ProviderFactory.create("github");
 const repos = await provider.listRepositories();
-console.log('Repositories:', repos.length);
+console.log("Repositories:", repos.length);
 ```
 
 ### Phase 4: UI統合（2-3日）
@@ -169,27 +173,32 @@ deno test --allow-env --allow-read --allow-net
 ## マイルストーン
 
 ### Milestone 1: 基盤完成（Week 1）
+
 - [ ] Provider interface
 - [ ] 統一データモデル
 - [ ] GitHub型定義
 - [ ] 設定システム
 
 ### Milestone 2: GitHub API（Week 2）
+
 - [ ] GitHub client実装
 - [ ] 全エンドポイント動作
 - [ ] ユニットテスト通過
 
 ### Milestone 3: Provider統合（Week 3）
+
 - [ ] GitLab/GitHubプロバイダー実装
 - [ ] Factory pattern
 - [ ] キャッシュ統合
 
 ### Milestone 4: UI統合（Week 4）
+
 - [ ] Denopsプラグイン更新
 - [ ] プロバイダー切り替え
 - [ ] E2Eテスト
 
 ### Milestone 5: リリース準備（Week 5）
+
 - [ ] ドキュメント完成
 - [ ] すべてのテスト通過
 - [ ] v0.3.0リリース
@@ -239,6 +248,7 @@ Error: Unauthorized: GitHub token is missing or invalid
 ```
 
 **解決策:**
+
 ```bash
 # トークンが設定されているか確認
 echo $GITHUB_TOKEN
@@ -254,6 +264,7 @@ Error: Rate limited. Retry after: 3600
 ```
 
 **解決策:**
+
 ```bash
 # レート制限状況を確認
 curl -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/rate_limit
@@ -266,6 +277,7 @@ error: Property 'full_name' does not exist on type 'Repository'
 ```
 
 **解決策:**
+
 - `data-model.md`を参照して統一型を確認
 - GitHub/GitLabプロバイダーで正しく変換されているか確認
 

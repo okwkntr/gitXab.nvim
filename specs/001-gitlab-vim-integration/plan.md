@@ -3,26 +3,33 @@
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Note**: This template is filled in by the `/speckit.plan` command. See
+`.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-実装はフロントエンドをdenopsプラグイン（TypeScript/Deno）で、バックエンドはGitLab APIクライアントライブラリ（TypeScript/Deno）として構築する。
+実装はフロントエンドをdenopsプラグイン（TypeScript/Deno）で、バックエンドはGitLab
+APIクライアントライブラリ（TypeScript/Deno）として構築する。
 フロントエンドはdenops.vimを通じてNeovimと統合し、バッファ管理、コマンド登録、UI操作を担当する。
-バックエンドライブラリはGitLab APIとの通信、認証、ETagベースキャッシュを提供し、denopsプラグインとCLIの両方から直接インポートして利用する。
+バックエンドライブラリはGitLab
+APIとの通信、認証、ETagベースキャッシュを提供し、denopsプラグインとCLIの両方から直接インポートして利用する。
 
 **Phase 1のアーキテクチャ（推奨・実装対象）：**
+
 - denopsプラグイン（`denops/gitxab/main.ts`）がバックエンドライブラリ（`deno-backend/mod.ts`）を直接インポート
 - ユーザーはNeovimを起動するだけで、denops.vimが自動的にDenoプロセスを管理
 - 別途バックエンドサーバーを起動する必要がない
 - CLIは同じライブラリを直接インポートして利用
 
 **Phase 2（後方互換・オプション）：**
+
 - 既存のIPCサーバーモード（`deno-backend/src/server.ts`）を保持
 - Lua IPCクライアント（`lua/gitxab/`）も維持
 - denopsが使えない環境やパフォーマンス要求が高い場合の代替手段として提供
 
-CLI の提供: `deno-backend/cli.ts` にて `list-projects`, `get-issue`, `list-mrs` などのサブコマンドを公開し、JSON を stdout に出力。自動化やデバッグ、CI/CDから直接利用可能。
+CLI の提供: `deno-backend/cli.ts` にて `list-projects`, `get-issue`, `list-mrs`
+などのサブコマンドを公開し、JSON を stdout
+に出力。自動化やデバッグ、CI/CDから直接利用可能。
 
 ## Technical Context
 
@@ -32,19 +39,23 @@ CLI の提供: `deno-backend/cli.ts` にて `list-projects`, `get-issue`, `list-
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS
+CLARIFICATION]\
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]\
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]\
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]\
 **Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Project Type**: [single/web/mobile - determines source structure]\
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps
+or NEEDS CLARIFICATION]\
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory,
+offline-capable or NEEDS CLARIFICATION]\
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS
+CLARIFICATION]
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 [Gates determined based on constitution file]
 
@@ -63,6 +74,7 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
+
 <!--
   ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
   for this feature. Delete unused options and expand the chosen structure with
@@ -113,7 +125,7 @@ directories captured above]
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |

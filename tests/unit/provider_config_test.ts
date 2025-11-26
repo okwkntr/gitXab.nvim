@@ -2,20 +2,23 @@
  * Unit tests for provider configuration and authentication
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
-  detectProviderFromUrl,
-  detectProviderFromEnv,
-  parseRepositoryId,
-  extractOwnerAndRepo,
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
   DEFAULT_BASE_URLS,
+  detectProviderFromEnv,
+  detectProviderFromUrl,
+  extractOwnerAndRepo,
+  parseRepositoryId,
   type ProviderType,
 } from "../../deno-backend/src/config/provider_config.ts";
 import {
-  getTokenFromEnv,
-  validateTokenFormat,
   createAuthHeaders,
+  getTokenFromEnv,
   getUserAgent,
+  validateTokenFormat,
 } from "../../deno-backend/src/auth/provider_auth.ts";
 
 // Provider detection tests
@@ -161,7 +164,7 @@ Deno.test("validateTokenFormat - Too short", () => {
 Deno.test("createAuthHeaders - GitHub", () => {
   const token = "ghp_test123";
   const headers = createAuthHeaders(token, "github");
-  
+
   assertEquals(headers["Authorization"], "Bearer ghp_test123");
   assertEquals(headers["Accept"], "application/vnd.github+json");
   assertExists(headers["X-GitHub-Api-Version"]);
@@ -170,7 +173,7 @@ Deno.test("createAuthHeaders - GitHub", () => {
 Deno.test("createAuthHeaders - GitLab", () => {
   const token = "glpat-test123";
   const headers = createAuthHeaders(token, "gitlab");
-  
+
   assertEquals(headers["PRIVATE-TOKEN"], "glpat-test123");
   assertEquals(headers["Content-Type"], "application/json");
 });

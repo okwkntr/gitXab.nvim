@@ -15,14 +15,14 @@ paths:
             type: string
           description: Search query
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Project'
+                  $ref: "#/components/schemas/Project"
   /projects/{projectId}/issues:
     get:
       summary: List issues for project
@@ -33,7 +33,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: OK
   /projects/{projectId}/issues/{issueIid}:
     get:
@@ -50,7 +50,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: OK
   /projects/{projectId}/merge_requests:
     get:
@@ -62,7 +62,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: OK
 components:
   schemas:

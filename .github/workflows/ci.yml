@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, 001-gitlab-vim-integration ]
+    branches: [main, 001-gitlab-vim-integration]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   lint:
@@ -128,7 +128,15 @@ jobs:
 
   all-tests-passed:
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-backend, test-integration, test-contract, docker-build, lua-lint]
+    needs: [
+      lint,
+      test-unit,
+      test-backend,
+      test-integration,
+      test-contract,
+      docker-build,
+      lua-lint,
+    ]
     steps:
       - name: All tests passed
         run: echo "✅ All tests passed successfully!"
