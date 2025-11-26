@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 001-gitlab-vim-integration ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  deno-tests:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,14 +15,120 @@ jobs:
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - name: Run Deno tests
+      - name: Check formatting
+        run: deno fmt --check
+      - name: Run linter
+        run: deno lint
+
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Run unit tests
+        run: deno test --allow-env tests/unit/
+
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Run backend tests
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: deno test --allow-env --allow-read --allow-net tests/backend_test.ts
+
+  test-integration:
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Run integration tests
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: deno test --allow-env --allow-read --allow-net tests/integration_test.ts
+
+  test-contract:
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Run contract tests
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: deno test --allow-env --allow-read --allow-net tests/contract/
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-backend, test-integration, test-contract]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Generate coverage
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          deno test --allow-env --allow-read --allow-net --coverage=coverage/
+          deno coverage coverage/ --lcov > coverage/lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [lint, test-unit, test-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
         run: |
           cd deno-backend
-          deno test
+          docker build -t gitxab-backend:test .
+      - name: Test Docker image
+        run: |
+          docker run --rm gitxab-backend:test deno --version
 
   lua-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install stylua (optional)
-        run: echo "# add stylua step in CI if desired"
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
+      - name: Setup LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+      - name: Install StyLua
+        run: |
+          wget -qO- https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux-x86_64.zip | busybox unzip -
+          chmod +x stylua
+          sudo mv stylua /usr/local/bin/
+      - name: Check Lua formatting
+        run: stylua --check lua/
+
+  all-tests-passed:
+    runs-on: ubuntu-latest
+    needs: [lint, test-unit, test-backend, test-integration, test-contract, docker-build, lua-lint]
+    steps:
+      - name: All tests passed
+        run: echo "✅ All tests passed successfully!"

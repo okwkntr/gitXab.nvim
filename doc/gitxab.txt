@@ -1,0 +1,550 @@
+*gitxab.txt*  GitLab and GitHub integration plugin for Neovim
+
+==============================================================================
+CONTENTS                                                    *gitxab-contents*
+
+    1. Introduction ........................... |gitxab-introduction|
+    2. Requirements ........................... |gitxab-requirements|
+    3. Installation ........................... |gitxab-installation|
+    4. Configuration .......................... |gitxab-configuration|
+    5. Commands ............................... |gitxab-commands|
+    6. Provider Management .................... |gitxab-providers|
+    7. Features ............................... |gitxab-features|
+        7.1 Project Management ................ |gitxab-projects|
+        7.2 Issue Management .................. |gitxab-issues|
+        7.3 Merge Request Management .......... |gitxab-merge-requests|
+    8. Key Mappings ........................... |gitxab-key-mappings|
+    9. Troubleshooting ........................ |gitxab-troubleshooting|
+    10. About ................................. |gitxab-about|
+
+==============================================================================
+1. INTRODUCTION                                         *gitxab-introduction*
+
+GitXab.vim is a Neovim plugin that provides seamless GitLab and GitHub
+integration directly from your editor. Access projects, issues, merge/pull
+requests, and more without leaving Vim.
+
+🎉 NEW: Multi-Provider Support!~
+GitXab now supports both GitLab and GitHub with a unified interface. The
+provider is automatically detected from your git remote URL.
+
+Key Features:~
+  • Multi-provider support (GitHub and GitLab)
+  • Auto-detection from git remote URL
+  • Project/repository listing and search
+  • Issue management (list, view, create, edit, comment)
+  • Merge/pull request management (list, view, create, comment, diffs)
+  • Discussion thread replies
+  • Smart buffer reuse
+  • Editor-based forms for long text input
+  • Real-time updates with `:w` command
+
+==============================================================================
+2. REQUIREMENTS                                         *gitxab-requirements*
+
+  • Neovim 0.7+ (with denops support)
+  • Deno 1.x runtime
+  • denops.vim plugin
+  • GitLab personal access token
+
+==============================================================================
+3. INSTALLATION                                         *gitxab-installation*
+
+Using lazy.nvim:~
+>lua
+    return {
+      {
+        'vim-denops/denops.vim',
+        lazy = false,
+      },
+      {
+        'your-org/gitxab.vim',
+        dependencies = { 'vim-denops/denops.vim' },
+        config = function()
+          vim.env.GITLAB_TOKEN = 'your-gitlab-personal-access-token'
+          -- Optional: Custom GitLab instance
+          -- vim.env.GITLAB_BASE_URL = 'https://gitlab.example.com/api/v4'
+        end,
+        cmd = {
+          'GitXabProjects',
+          'GitXabIssues',
+          'GitXabMRs',
+          'GitXabCreateIssue',
+          'GitXabCreateMR'
+        },
+      },
+    }
+<
+
+Using packer.nvim:~
+>lua
+    use {
+      'vim-denops/denops.vim',
+    }
+    use {
+      'your-org/gitxab.vim',
+      requires = { 'vim-denops/denops.vim' },
+      config = function()
+        vim.env.GITLAB_TOKEN = 'your-gitlab-personal-access-token'
+      end
+    }
+<
+
+Manual installation:~
+>bash
+    # Install denops.vim
+    mkdir -p ~/.local/share/nvim/site/pack/plugins/start
+    cd ~/.local/share/nvim/site/pack/plugins/start
+    git clone https://github.com/vim-denops/denops.vim.git
+
+    # Install gitxab.vim
+    git clone https://github.com/your-org/gitxab.vim.git
+<
+
+==============================================================================
+4. CONFIGURATION                                       *gitxab-configuration*
+
+Access Tokens~
+
+For GitHub:~
+>bash
+    export GITHUB_TOKEN="ghp_your_github_token"
+    # or
+    export GH_TOKEN="ghp_your_github_token"
+    # Optional: Custom base URL for self-hosted
+    export GITHUB_BASE_URL="https://github.example.com/api/v3"
+<
+
+For GitLab:~
+>bash
+    export GITLAB_TOKEN="glpat_your_gitlab_token"
+    # Optional: Custom base URL for self-hosted
+    export GITLAB_BASE_URL="https://gitlab.example.com/api/v4"
+<
+
+Neovim config (init.lua):~
+>lua
+    -- For GitHub
+    vim.env.GITHUB_TOKEN = 'ghp_your_github_token'
+    
+    -- For GitLab
+    vim.env.GITLAB_TOKEN = 'glpat_your_gitlab_token'
+    
+    -- Optional: Set preferred provider
+    vim.g.gitxab_provider = 'github'  -- or 'gitlab' or 'auto' (default)
+<
+
+Config file (~/.config/gitxab/config.json):~
+>json
+    {
+      "defaultProvider": "github",
+      "providers": {
+        "github": {
+          "token": "ghp_your_github_token",
+          "baseUrl": "https://api.github.com"
+        },
+        "gitlab": {
+          "token": "glpat_your_gitlab_token",
+          "baseUrl": "https://gitlab.com/api/v4"
+        }
+      }
+    }
+<
+
+Get personal access tokens:~
+  • GitHub: https://github.com/settings/tokens
+    Required scopes: `repo`, `read:user`
+  
+  • GitLab: https://gitlab.com/-/profile/personal_access_tokens
+    Required scopes: `api`, `read_user`, `read_api`
+
+Debug Logging~
+Enable detailed debug logging:
+>vim
+    :let $GITXAB_DEBUG = "1"
+    :call denops#plugin#reload('gitxab')
+<
+
+==============================================================================
+5. COMMANDS                                                 *gitxab-commands*
+
+                                                            *:GitXabProjects*
+:GitXabProjects [query]
+        List all accessible projects/repositories from GitHub or GitLab.
+        Optional [query] filters by name or description.
+
+        Example: >
+            :GitXabProjects
+            :GitXabProjects my-project
+<
+                                                              *:GitXabIssues*
+:GitXabIssues {project_id} [state]
+        List issues for the specified project. [state] can be:
+          • opened  - Show only open issues
+          • closed  - Show only closed issues
+          • all     - Show all issues (default)
+
+        Example: >
+            :GitXabIssues 12345
+            :GitXabIssues microsoft/vscode opened
+<
+                                                         *:GitXabCreateIssue*
+:GitXabCreateIssue {project_id}
+        Create a new issue for the specified project. Opens an interactive
+        form to input title, description, and labels.
+
+        Example: >
+            :GitXabCreateIssue 12345
+<
+                                                                 *:GitXabMRs*
+:GitXabMRs {project_id}
+        List merge requests/pull requests for the specified project.
+        Shows status icons, title, labels, assignees, and branch information.
+
+        Example: >
+            :GitXabMRs 12345
+            :GitXabMRs owner/repo
+<
+                                                            *:GitXabCreateMR*
+:GitXabCreateMR {project_id}
+        Create a new merge request/pull request for the specified project.
+        Opens a form-based editor with available branches and fields for
+        source branch, target branch, title, description, and labels.
+
+        Example: >
+            :GitXabCreateMR 12345
+<
+                                                       *:GitXabSetProvider*
+:GitXabSetProvider {provider}
+        Switch the provider between GitHub and GitLab. {provider} must be
+        either 'github' or 'gitlab'.
+
+        Example: >
+            :GitXabSetProvider github
+            :GitXabSetProvider gitlab
+<
+                                                      *:GitXabShowProvider*
+:GitXabShowProvider
+        Display the current provider and base URL.
+
+        Example: >
+            :GitXabShowProvider
+<
+
+==============================================================================
+6. PROVIDER MANAGEMENT                                      *gitxab-providers*
+
+GitXab supports both GitHub and GitLab with automatic provider detection.
+
+Auto-Detection~
+The provider is automatically detected from:
+  1. Vim variable `g:gitxab_provider`
+  2. Git remote URL (github.com → GitHub, gitlab.com → GitLab)
+  3. Environment variables (GITHUB_TOKEN → GitHub, GITLAB_TOKEN → GitLab)
+
+Manual Provider Selection~
+>vim
+    " Set provider preference (before running commands)
+    :let g:gitxab_provider = 'github'  " or 'gitlab' or 'auto' (default)
+    
+    " Switch provider at runtime
+    :GitXabSetProvider github
+    :GitXabSetProvider gitlab
+    
+    " Check current provider
+    :GitXabShowProvider
+<
+
+Example workflow:~
+>vim
+    " Work with GitHub
+    :GitXabSetProvider github
+    :GitXabProjects
+    " → Shows GitHub repositories
+    
+    " Switch to GitLab
+    :GitXabSetProvider gitlab
+    :GitXabProjects
+    " → Shows GitLab projects
+<
+
+==============================================================================
+7. FEATURES                                                 *gitxab-features*
+
+------------------------------------------------------------------------------
+7.1 PROJECT MANAGEMENT                                      *gitxab-projects*
+
+Project List Buffer~
+Display all accessible projects/repositories with search functionality.
+Works with both GitHub and GitLab.
+
+Key mappings in project list:
+  <Enter>  Open project menu with options:
+           • View Issues
+           • Create New Issue
+           • View Merge Requests (GitLab) / Pull Requests (GitHub)
+           • Create New Merge Request / Pull Request
+  q        Close buffer
+  ?        Show help
+
+------------------------------------------------------------------------------
+7.2 ISSUE MANAGEMENT                                          *gitxab-issues*
+
+Issue List Buffer~
+Display issues for a project with filtering by state (opened/closed/all).
+
+Key mappings in issue list:
+  <Enter>  View issue details and discussions
+  n        Create new issue
+  r        Refresh issue list
+  q        Close buffer
+  ?        Show help
+
+Issue Detail Buffer~
+View issue details including title, description, labels, assignees, and
+discussion threads.
+
+Key mappings in issue detail:
+  c        Add comment (opens markdown editor)
+  R        Reply to a discussion thread
+  e        Edit issue (title/description/labels/state)
+  r        Refresh issue view
+  q        Close buffer
+  ?        Show help
+
+Creating Issues~
+When creating an issue, you'll be prompted for:
+  • Title (required)
+  • Description (optional, markdown supported)
+  • Labels (optional, comma-separated)
+
+Editing Issues~
+The edit menu provides options to:
+  1. Edit Title - Change issue title (current value pre-filled)
+  2. Edit Description - Change description in markdown editor
+  3. Edit Labels - Modify labels (current values pre-filled)
+  4. Close Issue - Mark issue as closed
+  5. Reopen Issue - Reopen a closed issue
+
+Commenting~
+Press `c` to add a comment or `R` to reply to a discussion thread.
+  1. Opens a markdown editor (temporary file)
+  2. Write your comment (multiple lines, markdown supported)
+  3. Save with `:w` to post (immediately applied to GitLab)
+  4. Can save multiple times (each `:w` posts/updates)
+  5. Close with `:q` when done
+  6. Cancel with `:q!` without saving
+
+Discussion Thread Replies~
+Discussion threads are numbered [1], [2], [3]... in the detail view.
+  1. Press `R` and enter the discussion number (e.g., 2)
+  2. Opens a markdown editor with context
+  3. Write your reply
+  4. Save with `:w` to post
+  5. The reply will be added to the existing thread
+
+------------------------------------------------------------------------------
+7.3 MERGE REQUEST MANAGEMENT                          *gitxab-merge-requests*
+
+Merge Request / Pull Request List Buffer~
+Display merge requests (GitLab) or pull requests (GitHub) with status
+icons and branch information.
+
+Status Icons:
+  🟢  Opened (in progress)
+  🟣  Merged (completed)
+  🔴  Closed (abandoned)
+
+Key mappings in MR list:
+  <Enter>  View merge request details and discussions
+  n        Create new merge request
+  r        Refresh merge request list
+  q        Close buffer
+  ?        Show help
+
+Merge Request Detail Buffer~
+View MR details including title, description, branches, and discussions.
+
+Key mappings in MR detail:
+  d        View diffs (changed files)
+  c        Add comment (opens markdown editor)
+  R        Reply to a discussion thread
+  r        Refresh merge request view
+  q        Close buffer
+  ?        Show help
+
+Merge Request Diffs Buffer~
+Display file changes with status indicators and unified diff format.
+
+File Status Indicators:
+  [NEW]       New file added
+  [DELETED]   File removed
+  [RENAMED]   File renamed
+  [MODIFIED]  File changed
+
+Diff Markers:
+  +   Lines added (green)
+  -   Lines removed (red)
+  @@  Hunk header (line numbers)
+
+Key mappings in MR diffs:
+  q        Close buffer
+  ?        Show help
+
+Creating Merge Requests~
+Opens a form-based editor with:
+  • Remote branch list (fetched from GitLab)
+  • Default branch auto-detection
+  • Form fields:
+    - source_branch (required) - Branch to merge FROM
+    - target_branch (required) - Branch to merge INTO
+    - title (required) - MR title
+    - description (optional) - MR description (markdown supported)
+    - labels (optional) - Comma-separated labels
+    - remove_source_branch (optional) - Delete source after merge
+
+Usage:
+  1. Fill in the form fields
+  2. Save with `:w` to create the MR
+  3. Close with `:q` after saving
+  4. Cancel with `:q!` without saving
+
+==============================================================================
+7. KEY MAPPINGS                                         *gitxab-key-mappings*
+
+All buffers support `?` key to show context-sensitive help.
+
+Project List Buffer:~
+  <Enter>  Open project menu
+  q        Close buffer
+  ?        Show help
+
+Issue List Buffer:~
+  <Enter>  View issue details
+  n        Create new issue
+  r        Refresh list
+  q        Close buffer
+  ?        Show help
+
+Issue Detail Buffer:~
+  c        Add comment
+  R        Reply to discussion
+  e        Edit issue
+  r        Refresh view
+  q        Close buffer
+  ?        Show help
+
+Merge Request List Buffer:~
+  <Enter>  View MR details
+  n        Create new MR
+  r        Refresh list
+  q        Close buffer
+  ?        Show help
+
+Merge Request Detail Buffer:~
+  d        View diffs
+  c        Add comment
+  R        Reply to discussion
+  r        Refresh view
+  q        Close buffer
+  ?        Show help
+
+Merge Request Diffs Buffer:~
+  q        Close buffer
+  ?        Show help
+
+==============================================================================
+8. TROUBLESHOOTING                                   *gitxab-troubleshooting*
+
+Plugin not loading:~
+>vim
+    " Check if denops is running
+    :echo denops#server#status()
+
+    " Check if gitxab plugin is loaded
+    :echo denops#plugin#is_loaded('gitxab')
+<
+
+No projects shown:~
+>vim
+    " Check environment variables in Neovim
+    :lua print(vim.env.GITHUB_TOKEN)
+    :lua print(vim.env.GITLAB_TOKEN)
+    
+    " Check current provider
+    :GitXabShowProvider
+<
+
+Denops startup issues:~
+>vim
+    " Enable denops debug logging
+    :let g:denops#debug = 1
+
+    " Check denops log
+    :messages
+<
+
+API connection errors:~
+  • Verify your token is valid (GITHUB_TOKEN or GITLAB_TOKEN)
+  • Check network connectivity to the provider
+  • For self-hosted instances, ensure BASE_URL is correct
+  • Check if the correct provider is selected:
+    :GitXabShowProvider
+
+Enable debug logging:~
+>vim
+    " Enable detailed debug logging
+    :let $GITXAB_DEBUG = "1"
+    :call denops#plugin#reload('gitxab')
+    :GitXabProjects
+<
+
+Debug logs will show:
+  • Buffer reuse logic
+  • API requests and responses
+  • Temp file operations
+  • Save/update workflows
+
+Buffer reuse issues:~
+If windows keep splitting or buffers multiply:
+  1. Enable debug mode: >
+        :let $GITXAB_DEBUG = "1"
+<
+  2. Run the command: >
+        :GitXabProjects
+<
+  3. Check messages: >
+        :messages
+<
+  4. Look for "findOrCreateBuffer" debug output
+  5. Verify buffer names: >
+        :ls
+<     (should show `GitXab://...` names)
+  6. Check filetype: >
+        :set filetype?
+<     (should be `gitxab-projects`, `gitxab-issues`, etc.)
+
+==============================================================================
+10. ABOUT                                                      *gitxab-about*
+
+Author:   GitXab Contributors
+License:  MIT License
+GitHub:   https://github.com/your-org/gitxab.vim
+Website:  https://your-org.github.io/gitxab.vim
+
+Report bugs and feature requests:
+    https://github.com/your-org/gitxab.vim/issues
+
+Architecture:~
+  • Frontend: Denops (TypeScript/Deno plugin for Neovim)
+  • Backend: Multi-provider API client library (TypeScript/Deno)
+  • Providers: GitHub (REST API v3), GitLab (REST API v4)
+  • Communication: Direct in-process function calls via denops
+  • Cache: ETag-based HTTP caching
+
+Supported Platforms:~
+  • ✅ GitHub - Full support with REST API v3
+  • ✅ GitLab - Legacy API support (will migrate to provider interface)
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
