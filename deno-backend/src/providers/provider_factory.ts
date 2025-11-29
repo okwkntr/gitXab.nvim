@@ -8,6 +8,7 @@
 
 import type { Provider } from "./provider.ts";
 import { GitHubProvider } from "./github_provider.ts";
+import { GitLabProvider } from "./gitlab_provider.ts";
 import type { ProviderType } from "../config/provider_config.ts";
 import {
   autoDetectProvider,
@@ -116,10 +117,7 @@ export async function createProvider(
         return new GitHubProvider({ token, baseUrl });
 
       case "gitlab":
-        // TODO: Implement GitLabProvider
-        throw new ProviderFactoryError(
-          "GitLab provider not yet implemented. GitHub provider is currently supported.",
-        );
+        return new GitLabProvider({ token, baseUrl });
 
       default:
         throw new ProviderFactoryError(
@@ -158,6 +156,27 @@ export async function createGitHubProvider(config?: {
   });
 
   return provider as GitHubProvider;
+}
+
+/**
+ * Create a GitLab provider instance
+ *
+ * Convenience function for directly creating a GitLab provider.
+ *
+ * @param config - GitLab configuration
+ * @returns GitLab provider instance
+ */
+export async function createGitLabProvider(config?: {
+  token?: string;
+  baseUrl?: string;
+}): Promise<GitLabProvider> {
+  const provider = await createProvider({
+    provider: "gitlab",
+    token: config?.token,
+    baseUrl: config?.baseUrl,
+  });
+
+  return provider as GitLabProvider;
 }
 
 /**

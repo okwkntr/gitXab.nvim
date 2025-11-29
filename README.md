@@ -46,16 +46,19 @@ features directly from your editor.
 
 ## Supported Platforms
 
-- ✅ **GitHub** - Full support with REST API v3
+- ✅ **GitHub** - Full support with unified Provider interface
   - Repositories, Issues, Pull Requests
   - Comments, Branches, Diffs
+  - REST API v3
   - Auto-detection from git remote
   - Rate limit handling and retries
 
-- ✅ **GitLab** - Legacy API support
+- ✅ **GitLab** - Full support with unified Provider interface
   - Projects, Issues, Merge Requests
   - Comments, Branches, Diffs
-  - Will migrate to unified provider interface
+  - API v4
+  - Auto-detection from git remote
+  - Consistent behavior with GitHub
 
 ## Architecture
 
@@ -745,21 +748,7 @@ gitxab.vim/
 
 ### Running Tests
 
-GitXab.vim includes comprehensive test coverage with two types of test scripts:
-
-#### Test Scripts Comparison
-
-| Aspect                    | `run_tests.sh`        | `test_provider_commands.sh`  |
-| ------------------------- | --------------------- | ---------------------------- |
-| **Environment**           | Deno                  | Neovim                       |
-| **Test Target**           | Backend logic & units | Vim plugin integration       |
-| **External Dependencies** | None (uses mocks)     | Neovim, denops.vim           |
-| **CI/CD**                 | ✅ Well suited        | ❌ Complex setup             |
-| **Debug Use**             | Unit-level testing    | End-to-end verification      |
-| **Automation**            | Fully automated       | Manual execution recommended |
-| **Purpose**               | Continuous testing    | Plugin functionality check   |
-
-#### Automated Backend Tests
+GitXab.vim includes comprehensive automated test coverage:
 
 **Quick test run with `run_tests.sh`**:
 
@@ -781,28 +770,14 @@ GitXab.vim includes comprehensive test coverage with two types of test scripts:
 - Integration tests - MockDenops integration, dispatcher functions
 - Backend tests - Real GitLab/GitHub API integration (optional)
 
-#### Neovim Plugin Integration Tests
+**Manual testing in Neovim**:
 
-**Manual plugin verification with `test_provider_commands.sh`**:
+After installing the plugin in your Neovim environment, test the commands:
 
-```bash
-chmod +x test_provider_commands.sh
-./test_provider_commands.sh
+```vim
+:GitXabSetProvider github
+:GitXabProjects
 ```
-
-**Verification items**:
-
-- Command registration (`:GitXabSetProvider`, `:GitXabShowProvider`)
-- Autoload functions (`gitxab#set_provider()`, `gitxab#show_provider()`)
-- Denops plugin loading
-- Command execution in real Neovim environment
-
-**When to use**:
-
-- After modifying Vim plugin code
-- Debugging "command not found" issues
-- Verifying plugin manager compatibility
-- Testing in user-like environment
 
 #### E2E Test Scenarios
 
@@ -882,13 +857,16 @@ For more details, see [CONTRIBUTING.md](CONTRIBUTING.md) (coming soon).
 
 - 📚 Documentation: [docs/](docs/)
 - 🐛 Bug Reports: [GitHub Issues](https://github.com/okwkntr/gitXab.nvim/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/okwkntr/gitXab.nvim/discussions)
+- 💬 Discussions:
+  [GitHub Discussions](https://github.com/okwkntr/gitXab.nvim/discussions)
 
 ## Credits
 
 Built with ❤️ for Neovim, GitHub, and GitLab users.
 
 **Technologies:**
-- [denops.vim](https://github.com/vim-denops/denops.vim) - TypeScript/Deno plugin framework
+
+- [denops.vim](https://github.com/vim-denops/denops.vim) - TypeScript/Deno
+  plugin framework
 - [Deno](https://deno.land/) - Modern JavaScript/TypeScript runtime
 - [Neovim](https://neovim.io/) - Hyperextensible Vim-based text editor

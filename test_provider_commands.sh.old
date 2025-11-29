@@ -1,0 +1,176 @@
+#!/bin/bash
+# Test provider commands in Neovim
+
+# Set required environment variables
+export GITHUB_TOKEN="${GITHUB_TOKEN:-test_token}"
+export GITLAB_TOKEN="${GITLAB_TOKEN:-test_token}"
+
+# Get the plugin directory
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Create a test file with commands
+cat > /tmp/gitxab_test.vim << EOF
+" Debug: Show runtimepath
+echo "=== Runtime Path ==="
+echo &runtimepath
+let g:denops#deno="/home/kentarou/.deno/bin/deno"
+let g:denops#debug = 1
+echo ""
+
+" Check if denops functions are available
+echo "=== Denops Availability ==="
+if exists('*denops#request')
+  echo "✓ denops#request available"
+else
+  echo "✗ denops#request NOT available"
+  echo "  This means denops.vim is not in runtimepath!"
+endif
+
+if exists('*denops#plugin#load')
+  echo "✓ denops#plugin#load available"
+else
+  echo "✗ denops#plugin#load NOT available"
+endif
+echo ""
+
+" Wait for denops to be ready
+sleep 1000m
+
+" Test 1: Check if commands exist
+echo "=== Testing GitXab Commands ==="
+try
+  command GitXabSetProvider
+  echo "✓ GitXabSetProvider command exists"
+catch
+  echo "✗ GitXabSetProvider command NOT found"
+endtry
+
+try
+  command GitXabShowProvider
+  echo "✓ GitXabShowProvider command exists"
+catch
+  echo "✗ GitXabShowProvider command NOT found"
+endtry
+
+" Test 2: Check if autoload functions exist
+echo ""
+echo "=== Testing Autoload Functions ==="
+" Try to call the function to trigger autoload
+try
+  call gitxab#set_provider('github')
+  echo "✓ gitxab#set_provider() exists and callable"
+catch /E117/
+  echo "✗ gitxab#set_provider() NOT found (E117)"
+catch
+  echo "✓ gitxab#set_provider() exists (other error: " . v:exception . ")"
+endtry
+
+try
+  call gitxab#show_provider()
+  echo "✓ gitxab#show_provider() exists and callable"
+catch /E117/
+  echo "✗ gitxab#show_provider() NOT found (E117)"
+catch
+  echo "✓ gitxab#show_provider() exists (other error: " . v:exception . ")"
+endtry
+
+" Test 3: Check denops plugin
+echo ""
+echo "=== Testing Denops Plugin ==="
+if exists('*denops#plugin#is_loaded')
+  if denops#plugin#is_loaded('gitxab')
+    echo "✓ gitxab denops plugin is loaded"
+  else
+    echo "✗ gitxab denops plugin NOT loaded"
+    echo "Attempting to load..."
+    try
+      call gitxab#load()
+      sleep 500m
+      if denops#plugin#is_loaded('gitxab')
+        echo "✓ Successfully loaded gitxab"
+      else
+        echo "✗ Failed to load gitxab"
+      endif
+    catch
+      echo "✗ Error loading: " . v:exception
+    endtry
+  endif
+else
+  echo "✗ denops#plugin#is_loaded NOT available (denops.vim not installed?)"
+endif
+
+" Test 4: Try to use the commands (with error handling)
+echo ""
+echo "=== Testing Command Execution ==="
+try
+  GitXabSetProvider github
+  echo "✓ GitXabSetProvider github succeeded"
+catch /^Vim\%((\a\+)\)\=:E/
+  echo "✗ GitXabSetProvider failed: " . v:exception
+endtry
+
+try
+  GitXabShowProvider
+  echo "✓ GitXabShowProvider succeeded"
+catch /^Vim\%((\a\+)\)\=:E/
+  echo "✗ GitXabShowProvider failed: " . v:exception
+endtry
+
+echo ""
+echo "=== Test Complete ==="
+echo "Press any key to exit..."
+call getchar()
+"qall!
+EOF
+
+# Run Neovim with the test script
+echo "Running Neovim test..."
+echo "Plugin directory: ${PLUGIN_DIR}"
+echo "This will test if GitXab commands are available."
+echo ""
+echo "Note: This test requires denops.vim to be installed."
+echo "If you see errors about denops not being available, please install it first."
+echo ""
+
+# Try to find denops.vim in common locations
+DENOPS_PATHS=(
+  "$HOME/.local/share/nvim/site/pack/plugins/start/denops.vim"
+  "$HOME/.local/share/nvim/lazy/denops.vim"
+  "$HOME/.config/nvim/pack/plugins/start/denops.vim"
+)
+
+DENOPS_FOUND=""
+for path in "${DENOPS_PATHS[@]}"; do
+  if [ -d "$path" ]; then
+    DENOPS_FOUND="$path"
+    echo "Found denops.vim at: $path"
+    break
+  fi
+done
+
+if [ -z "$DENOPS_FOUND" ]; then
+  echo "Warning: denops.vim not found in standard locations."
+  echo "The test may fail if denops.vim is not in your runtimepath."
+  echo ""
+fi
+
+# Build nvim command with proper denops path
+# Note: denops.vim must be loaded BEFORE gitxab.nvim
+if [ -n "$DENOPS_FOUND" ]; then
+  echo "Using denops.vim from: $DENOPS_FOUND"
+  $(which nvim) -u NONE \
+    -c "set runtimepath^=${DENOPS_FOUND}" \
+    -c "set runtimepath+=${PLUGIN_DIR}" \
+    -S /tmp/gitxab_test.vim
+else
+  echo "No denops.vim found - test will likely fail"
+  nvim -u NONE \
+    -c "set runtimepath+=${PLUGIN_DIR}" \
+    -S /tmp/gitxab_test.vim
+fi
+
+# Clean up
+rm -f /tmp/gitxab_test.vim
+
+echo ""
+echo "Test finished."

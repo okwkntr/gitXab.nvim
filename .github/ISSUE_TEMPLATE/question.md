@@ -12,7 +12,8 @@ What would you like to know?
 
 ## Context
 
-Describe what you're trying to accomplish or what you're having trouble understanding.
+Describe what you're trying to accomplish or what you're having trouble
+understanding.
 
 ## What I've Tried
 

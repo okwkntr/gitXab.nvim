@@ -1,10 +1,29 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to GitXab.vim will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- GitLab Provider implementation with unified Provider interface
+- GitLab Converter for consistent data model conversion
+- GitLab type definitions (models/gitlab.ts)
+
+### Changed
+
+- Migrated GitLab from legacy API to unified Provider interface
+- Updated Provider Factory to support GitLab Provider
+- Improved consistency between GitHub and GitLab implementations
+
+### Fixed
+
+- GitLab now uses the same Provider interface as GitHub
+- Consistent behavior across both platforms
 
 ## [Unreleased]
 
