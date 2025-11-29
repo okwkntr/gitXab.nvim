@@ -1,10 +1,12 @@
 # Contributing to GitXab.vim
 
-Thank you for your interest in contributing to GitXab.vim! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to GitXab.vim! This document
+provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
-By participating in this project, you agree to maintain a respectful and inclusive environment for all contributors.
+By participating in this project, you agree to maintain a respectful and
+inclusive environment for all contributors.
 
 ## Getting Started
 
@@ -81,7 +83,7 @@ deno test --allow-env --allow-read --allow-net --allow-write tests/integration_t
 
 - Run formatter: `deno fmt`
 - Run linter: `deno lint`
-- Fix common issues: 
+- Fix common issues:
   - Use `_variable` for intentionally unused variables
   - Avoid `any` type - use `unknown` with type guards
   - Add comments to empty catch blocks
@@ -124,6 +126,7 @@ git commit -m "test: add unit tests for provider factory"
 ```
 
 **Commit message format**:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation changes
@@ -139,6 +142,7 @@ git push origin feature/your-feature-name
 ```
 
 Then open a Pull Request on GitHub with:
+
 - Clear description of changes
 - Reference to related issues (if any)
 - Screenshots or GIFs for UI changes
@@ -159,23 +163,28 @@ Then open a Pull Request on GitHub with:
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests added/updated
 - [ ] Integration tests pass
 - [ ] Manual testing completed
 
 ## Screenshots (if applicable)
+
 Add screenshots or GIFs for UI changes
 
 ## Related Issues
+
 Closes #123
 ```
 
@@ -238,7 +247,7 @@ Test denops plugin functionality:
 Deno.test("command should work correctly", async () => {
   const denops = new MockDenops();
   await main(denops);
-  
+
   const result = await denops.dispatcher["commandName"]();
   assertEquals(result, expected);
 });
@@ -281,6 +290,7 @@ GITXAB_DEBUG=1 nvim
 ### User Documentation
 
 Update relevant documentation:
+
 - `README.md` - User-facing features
 - `doc/gitxab.txt` - Vim help documentation
 - `docs/` - Detailed guides
@@ -321,8 +331,10 @@ Update relevant documentation:
 ## Getting Help
 
 - 📚 **Documentation**: Check [docs/](docs/) for guides
-- 💬 **Discussions**: Use [GitHub Discussions](https://github.com/okwkntr/gitXab.nvim/discussions)
-- 🐛 **Issues**: Search [existing issues](https://github.com/okwkntr/gitXab.nvim/issues) first
+- 💬 **Discussions**: Use
+  [GitHub Discussions](https://github.com/okwkntr/gitXab.nvim/discussions)
+- 🐛 **Issues**: Search
+  [existing issues](https://github.com/okwkntr/gitXab.nvim/issues) first
 - 💡 **Questions**: Ask in discussions or open an issue
 
 ## Release Process
@@ -337,8 +349,10 @@ Update relevant documentation:
 
 ## License
 
-By contributing to GitXab.vim, you agree that your contributions will be licensed under the MIT License.
+By contributing to GitXab.vim, you agree that your contributions will be
+licensed under the MIT License.
 
 ## Thank You!
 
-Your contributions make GitXab.vim better for everyone. Thank you for taking the time to contribute! 🎉
+Your contributions make GitXab.vim better for everyone. Thank you for taking the
+time to contribute! 🎉

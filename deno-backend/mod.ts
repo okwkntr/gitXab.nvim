@@ -36,6 +36,7 @@ export type {
 // Provider factory
 export {
   createGitHubProvider,
+  createGitLabProvider,
   createProvider,
   detectCurrentProvider,
   ProviderFactoryError,
@@ -47,6 +48,13 @@ export {
   GitHubConverter,
   githubConverter,
 } from "./src/providers/github_converter.ts";
+
+// GitLab provider
+export { GitLabProvider } from "./src/providers/gitlab_provider.ts";
+export {
+  GitLabConverter,
+  gitlabConverter,
+} from "./src/providers/gitlab_converter.ts";
 
 // GitHub API client
 export { GitHubAPIError, GitHubClient } from "./src/services/github_client.ts";

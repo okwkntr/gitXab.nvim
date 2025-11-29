@@ -6,7 +6,8 @@
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Breaking change (fix or feature that would cause existing functionality to
+      not work as expected)
 - [ ] Documentation update
 - [ ] Code refactoring
 - [ ] Performance improvement
@@ -15,6 +16,7 @@
 ## Related Issues
 
 <!-- Link to related issues using #issue_number -->
+
 Closes #
 
 ## Motivation and Context
@@ -42,14 +44,12 @@ Describe the testing you've done:
 - [ ] Tested on multiple platforms (specify below)
 
 **Testing environment**:
-- OS: 
-- Neovim version: 
-- Deno version: 
 
-**Test scenarios**:
-1. 
-2. 
-3. 
+- OS:
+- Neovim version:
+- Deno version:
+
+**Test scenarios**: 1. 2. 3.
 
 ## Screenshots (if applicable)
 

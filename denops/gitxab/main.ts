@@ -13,18 +13,18 @@ import * as fn from "https://deno.land/x/denops_std@v6.0.1/function/mod.ts";
 import * as vars from "https://deno.land/x/denops_std@v6.0.1/variable/mod.ts";
 import * as mapping from "https://deno.land/x/denops_std@v6.0.1/mapping/mod.ts";
 
-// Multi-provider support (new)
+// Multi-provider support
 import {
   type Comment,
   createProvider,
   detectCurrentProvider,
+  type Issue as ProviderIssue,
   type Provider,
-  type ProviderIssue,
   type PullRequest,
   type Repository,
 } from "../../deno-backend/mod.ts";
 
-// Legacy GitLab API (for backward compatibility)
+// Legacy GitLab API functions (gradual migration to Provider interface)
 import {
   addNoteToDiscussion as apiAddNoteToDiscussion,
   addNoteToMRDiscussion as apiAddNoteToMRDiscussion,
@@ -45,7 +45,6 @@ import {
   listBranches as apiListBranches,
   listIssues as apiListIssues,
   listMergeRequests as apiListMergeRequests,
-  listProjects,
   type Project,
   updateIssue as apiUpdateIssue,
   type UpdateIssueParams,
@@ -285,54 +284,28 @@ export async function main(denops: Denops): Promise<void> {
       try {
         const q = typeof query === "string" ? query : undefined;
 
-        // Check provider preference
-        const preferredProvider = await vars.g.get(
-          denops,
-          "gitxab_provider",
-          "auto",
-        ) as string;
+        // Use unified Provider interface for all providers
+        const provider = await getProvider(denops);
+        const repositories = await provider.listRepositories();
 
-        // Use new Provider interface for GitHub, legacy API for GitLab
-        let projects: Project[];
-        let providerName: string;
+        // Convert Repository[] to Project[] for backward compatibility
+        const projects: Project[] = repositories.map((repo) => ({
+          id: typeof repo.id === "number"
+            ? repo.id
+            : parseInt(repo.id, 10) || 0,
+          name: repo.name,
+          path: repo.fullName,
+          description: repo.description || "",
+          web_url: repo.url,
+          path_with_namespace: repo.fullName,
+          namespace: {
+            name: repo.fullName.split("/")[0],
+            path: repo.fullName.split("/")[0],
+          },
+          default_branch: repo.defaultBranch,
+        }));
 
-        if (preferredProvider === "github") {
-          // Use new GitHub Provider
-          const provider = await getProvider(denops);
-          const repositories = await provider.listRepositories(q);
-
-          // Convert Repository[] to Project[] for backward compatibility
-          projects = repositories.map((repo) => ({
-            id: typeof repo.id === "number"
-              ? repo.id
-              : parseInt(repo.id, 10) || 0,
-            name: repo.name,
-            path: repo.fullName,
-            description: repo.description || "",
-            web_url: repo.url,
-            path_with_namespace: repo.fullName,
-            namespace: {
-              name: repo.fullName.split("/")[0],
-              path: repo.fullName.split("/")[0],
-            },
-            default_branch: repo.defaultBranch,
-          }));
-          providerName = "GitHub";
-        } else {
-          // Use legacy GitLab API
-          const response = await listProjects(q);
-
-          // Ensure we have an array
-          if (Array.isArray(response)) {
-            projects = response as Project[];
-          } else {
-            throw new Error(
-              `API returned unexpected format (expected array, got ${typeof response}). ` +
-                `Check GITLAB_TOKEN and GITLAB_BASE_URL settings.`,
-            );
-          }
-          providerName = "GitLab";
-        }
+        const providerName = provider.name === "github" ? "GitHub" : "GitLab";
 
         if (projects.length === 0) {
           // Use simpler echo command instead of nvim_echo

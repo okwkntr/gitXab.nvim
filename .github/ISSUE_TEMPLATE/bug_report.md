@@ -67,4 +67,5 @@ Add any other context about the problem here.
 
 ## Possible Solution
 
-(Optional) If you have an idea of what might be causing the issue or how to fix it.
+(Optional) If you have an idea of what might be causing the issue or how to fix
+it.

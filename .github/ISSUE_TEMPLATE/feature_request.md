@@ -13,6 +13,7 @@ A clear and concise description of the feature you'd like to see.
 ## Problem Statement
 
 Describe the problem this feature would solve. For example:
+
 - I'm always frustrated when...
 - It's difficult to...
 - I need a way to...
@@ -20,6 +21,7 @@ Describe the problem this feature would solve. For example:
 ## Proposed Solution
 
 Describe how you envision this feature working. Include:
+
 - User interface (commands, shortcuts, etc.)
 - Expected behavior
 - Example usage
@@ -43,6 +45,7 @@ Describe alternative solutions or features you've considered.
 ## Provider Support
 
 Which providers should support this feature?
+
 - [ ] GitHub
 - [ ] GitLab
 - [ ] Both

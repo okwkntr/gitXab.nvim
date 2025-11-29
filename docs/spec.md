@@ -101,7 +101,7 @@ REST API v3とGitLab API v4の両方をサポートしています。
 - マルチプロバイダーアーキテクチャ
   - 統一Provider interface
   - GitHub REST API v3クライアント
-  - GitLab API v4クライアント（レガシーAPI使用中）
+  - GitLab API v4クライアント（Provider interface経由で使用）
 - 認証管理ライブラリ
   - マルチプロバイダートークン管理
   - 環境変数サポート（GITHUB_TOKEN, GITLAB_TOKEN）
@@ -143,11 +143,14 @@ REST API v3とGitLab API v4の両方をサポートしています。
   - ProviderFactory（自動検出機能付き）
 - **APIクライアント層**（`src/services/`）
   - GitHub REST API v3クライアント（リトライ、レート制限対応）
-  - GitLab REST API v4クライアント（レガシー）
+  - GitLab REST API v4クライアント
 - **データモデル層**（`src/models/`）
   - 共通データモデル（Repository, Issue, PullRequest, Comment, Branch）
   - GitHub型定義
   - GitLab型定義
+- **Converter層**（`src/providers/`）
+  - GitHub Converter
+  - GitLab Converter
 - **設定・認証層**（`src/config/`, `src/auth/`）
   - プロバイダー設定管理
   - 自動検出（Git remote, 環境変数）
@@ -187,8 +190,8 @@ REST API v3とGitLab API v4の両方をサポートしています。
 ### 5. 拡張性
 
 - プロバイダーシステム
-  - ✅ GitHubプロバイダー（実装済み）
-  - 🔄 GitLabプロバイダー（レガシーAPI使用中、移行予定）
+  - ✅ GitHubプロバイダー（Provider interface実装済み）
+  - ✅ GitLabプロバイダー（Provider interface実装済み）
   - 将来的に他のGitホスティングサービス追加可能
 - カスタムUIテーマ
 - ユーザー定義コマンド
@@ -235,7 +238,7 @@ REST API v3とGitLab API v4の両方をサポートしています。
 
 ### フェーズ4: 拡張機能（🔄 進行中）
 
-1. 🔄 GitLabのProvider interface移行（レガシーAPI使用中）
+1. ✅ GitLabのProvider interface移行（完了）
 2. ⏳ インライン差分コメント
 3. ⏳ 高度な検索機能
 4. ⏳ PR/MRのマージ操作
@@ -297,7 +300,7 @@ REST API v3とGitLab API v4の両方をサポートしています。
 
 ### 実装済み機能
 
-- ✅ GitLab統合（レガシーAPI）
+- ✅ GitLab統合（Provider interface）
   - プロジェクト一覧・検索
   - Issue管理（一覧、詳細、作成、編集、コメント）
   - MR管理（一覧、詳細、作成、コメント、差分表示）
