@@ -150,13 +150,7 @@ git clone https://github.com/your-org/gitxab.vim.git
 
 Denops requires Deno runtime:
 
-```bash
-# Linux/macOS
-curl -fsSL https://deno.land/install.sh | sh
-
-# Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
-export PATH="$HOME/.deno/bin:$PATH"
-```
+[Install Deno.](https://docs.deno.com/runtime/getting_started/installation/)
 
 **Step 3: Configure Authentication**
 
@@ -640,18 +634,6 @@ Expected: All tests pass
 
 - Backend tests: 4 tests (listProjects, listIssues with filters)
 - Integration tests: 9 tests (dispatcher functions, buffer reuse, help system)
-
-### Manual Testing
-
-**Buffer Reuse Test** (verify windows don't multiply on reload):
-
-```bash
-./tests/test_buffer_reuse.sh
-```
-
-This interactive test helps verify that buffers are reused correctly and windows
-don't split on refresh. See `tests/TEST_BUFFER_REUSE.md` for detailed test
-procedures.
 
 ### Test with Real GitLab API
 
