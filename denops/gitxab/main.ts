@@ -15,35 +15,25 @@ import * as mapping from "https://deno.land/x/denops_std@v6.0.1/mapping/mod.ts";
 
 // Multi-provider support
 import {
-  type Comment,
   createProvider,
   detectCurrentProvider,
-  type Issue as ProviderIssue,
   type Provider,
-  type PullRequest,
-  type Repository,
 } from "../../deno-backend/mod.ts";
 
 // Legacy GitLab API functions (gradual migration to Provider interface)
 import {
   addNoteToDiscussion as apiAddNoteToDiscussion,
   addNoteToMRDiscussion as apiAddNoteToMRDiscussion,
-  createIssue as apiCreateIssue,
   createIssueNote as apiCreateIssueNote,
-  type CreateIssueParams,
   createMergeRequest as apiCreateMergeRequest,
   createMRNote as apiCreateMRNote,
   getIssue as apiGetIssue,
   getIssueDiscussions as apiGetIssueDiscussions,
-  getIssueNotes as apiGetIssueNotes,
   getMergeRequest as apiGetMergeRequest,
   getMergeRequestChanges as apiGetMRChanges,
-  getMergeRequestDiffs as apiGetMRDiffs,
   getMergeRequestDiscussions as apiGetMRDiscussions,
   type Issue,
-  type IssueNote,
   listBranches as apiListBranches,
-  listIssues as apiListIssues,
   listMergeRequests as apiListMergeRequests,
   type Project,
   updateIssue as apiUpdateIssue,
@@ -287,14 +277,14 @@ export async function main(denops: Denops): Promise<void> {
      */
     async listProjects(query?: unknown): Promise<unknown> {
       try {
-        const q = typeof query === "string" ? query : undefined;
+        const _q = typeof query === "string" ? query : undefined;
 
         // Use unified Provider interface for all providers
         const provider = await getProvider(denops);
         const repositories = await provider.listRepositories();
 
         // Store repositories for later use (preserve original ID format)
-        const repoMap = new Map(repositories.map((r) => [r.name, r]));
+        const _repoMap = new Map(repositories.map((r) => [r.name, r]));
 
         // Convert Repository[] to ProjectWithRepoId[] for backward compatibility
         // Note: For GitHub, use "owner/repo" format; for GitLab use numeric ID
@@ -328,7 +318,7 @@ export async function main(denops: Denops): Promise<void> {
         }
 
         // Find or create buffer for displaying projects
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-projects",
           "GitXab://projects",
@@ -551,7 +541,7 @@ export async function main(denops: Denops): Promise<void> {
         }
 
         // Find or create buffer for displaying issues
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-issues",
           `GitXab://project/${projectId}/issues`,
@@ -802,7 +792,7 @@ export async function main(denops: Denops): Promise<void> {
         ]);
 
         // Find or create buffer for displaying issue details
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-issue",
           `GitXab://project/${pid}/issue/${iid}`,
@@ -1605,7 +1595,7 @@ export async function main(denops: Denops): Promise<void> {
         await denops.cmd(`augroup GitXabReply`);
         await denops.cmd(`autocmd! * ${escapedPath}`);
         await denops.cmd(`augroup END`);
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
     },
@@ -1639,7 +1629,7 @@ export async function main(denops: Denops): Promise<void> {
         if (debug) {
           await denops.cmd(`echo "[GitXab Debug] Cleaned up autocmds"`);
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
     },
@@ -1915,7 +1905,7 @@ export async function main(denops: Denops): Promise<void> {
         }
 
         // Find or create buffer for displaying MRs
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-mrs",
           `GitXab://project/${pid}/merge-requests`,
@@ -2519,6 +2509,7 @@ export async function main(denops: Denops): Promise<void> {
 
         // Fetch MR changes (includes diff information)
         await denops.cmd('echo "Fetching diffs..."');
+        // deno-lint-ignore no-explicit-any
         const mrChanges = await apiGetMRChanges(projectId, mrIid) as any;
 
         if (!mrChanges || !mrChanges.changes) {

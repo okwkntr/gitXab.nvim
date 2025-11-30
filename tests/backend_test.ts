@@ -251,6 +251,7 @@ Deno.test({
         assertExists(branch.name);
         console.log(`  ✓ Branch structure validated`);
 
+        // deno-lint-ignore no-explicit-any
         const defaultBranch = branches.find((b: any) => b.default === true);
         if (defaultBranch) {
           console.log(`    Default branch: ${defaultBranch.name}`);

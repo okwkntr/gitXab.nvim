@@ -5,7 +5,6 @@
 import {
   assertEquals,
   assertExists,
-  assertRejects,
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
   GitHubAPIError,
@@ -52,7 +51,7 @@ const mockIssue = {
   html_url: "https://github.com/testuser/test-repo/issues/1",
 };
 
-const mockPullRequest = {
+const _mockPullRequest = {
   ...mockIssue,
   number: 2,
   title: "Test PR",

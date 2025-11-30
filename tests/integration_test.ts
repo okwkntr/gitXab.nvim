@@ -23,26 +23,27 @@ class MockDenops {
   private globalVars: Record<string, unknown> = {};
   private currentBufnr = 1;
 
-  async cmd(command: string): Promise<void> {
+  cmd(command: string): Promise<void> {
     this.commands.push(command);
     // Simulate buffer creation
     if (command === "new" || command.includes("sbuffer")) {
       this.currentBufnr++;
     }
+    return Promise.resolve();
   }
 
-  async call(func: string, ...args: unknown[]): Promise<unknown> {
+  call(func: string, ...args: unknown[]): Promise<unknown> {
     if (func === "nvim_err_writeln") {
       throw new Error(`nvim_err_writeln called: ${args[0]}`);
     }
     if (func === "input") {
-      return ""; // Return empty for input prompts
+      return Promise.resolve(""); // Return empty for input prompts
     }
     if (func === "inputlist") {
-      return 0; // Return 0 (cancel) for inputlist
+      return Promise.resolve(0); // Return 0 (cancel) for inputlist
     }
     if (func === "bufnr") {
-      return this.currentBufnr;
+      return Promise.resolve(this.currentBufnr);
     }
     if (func === "getbufinfo") {
       // Return array of buffer info
@@ -52,28 +53,32 @@ class MockDenops {
         bufnr,
         variables: data.variables,
       }));
-      return buffers;
+      return Promise.resolve(buffers);
     }
     if (func === "getbufvar") {
       const [bufnr, varname] = args;
       if (varname === "&filetype") {
-        return this.buffers.get(bufnr as number)?.filetype || "";
+        return Promise.resolve(
+          this.buffers.get(bufnr as number)?.filetype || "",
+        );
       }
-      return this.buffers.get(bufnr as number)?.variables[varname as string];
+      return Promise.resolve(
+        this.buffers.get(bufnr as number)?.variables[varname as string],
+      );
     }
     if (func === "bufwinnr") {
       // Return -1 (buffer not visible) for testing
-      return -1;
+      return Promise.resolve(-1);
     }
     if (func === "nvim_get_var") {
       const [varname] = args;
-      return this.globalVars[varname as string];
+      return Promise.resolve(this.globalVars[varname as string]);
     }
-    return null;
+    return Promise.resolve(null);
   }
 
   // Simulate buffer variable setting
-  async setBufVar(
+  setBufVar(
     bufnr: number,
     varname: string,
     value: unknown,
@@ -87,6 +92,7 @@ class MockDenops {
     } else {
       buf.variables[varname] = value;
     }
+    return Promise.resolve();
   }
 
   // Simulate global variable setting
@@ -113,6 +119,7 @@ Deno.test("showHelp - projects context", async () => {
 
   // Import main and initialize
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // Call showHelp
@@ -139,6 +146,7 @@ Deno.test("showHelp - issues context", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   denops.clearCommands();
@@ -158,6 +166,7 @@ Deno.test("showHelp - issue-detail context", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   denops.clearCommands();
@@ -177,6 +186,7 @@ Deno.test("showHelp - invalid context defaults to projects", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   denops.clearCommands();
@@ -195,6 +205,7 @@ Deno.test("listProjects - returns array", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // This will actually call the API - should return array or throw error
@@ -220,6 +231,7 @@ Deno.test("dispatcher has all expected functions", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // Verify all dispatcher functions exist
@@ -252,6 +264,7 @@ Deno.test("commands are registered", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   const commands = denops.getCommands();
@@ -281,7 +294,8 @@ Deno.test({
     const denops = new MockDenops();
 
     const { main } = await import("../denops/gitxab/main.ts");
-    await main(denops as any);
+    // deno-lint-ignore no-explicit-any
+  await main(denops as any);
 
     // Set mock environment for provider initialization
     Deno.env.set("GITHUB_TOKEN", "test_token");
@@ -324,6 +338,7 @@ Deno.test("buffer reuse - findOrCreateBuffer reuses existing buffer", async () =
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // Simulate existing buffer with gitxab-projects filetype
@@ -358,6 +373,7 @@ Deno.test("listMergeRequests - dispatcher creates buffer", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   denops.clearCommands();
@@ -388,6 +404,7 @@ Deno.test("viewMergeRequest - dispatcher validates input", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // Test with invalid input types
@@ -409,6 +426,7 @@ Deno.test("viewMRDiffs - dispatcher validates input", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // Test with invalid input types
@@ -430,6 +448,7 @@ Deno.test("createMergeRequest - dispatcher validates input", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // Test with invalid project ID
@@ -449,6 +468,7 @@ Deno.test("MR dispatcher functions - all registered", async () => {
   const denops = new MockDenops();
 
   const { main } = await import("../denops/gitxab/main.ts");
+  // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
   // Check that MR-related dispatcher functions exist
