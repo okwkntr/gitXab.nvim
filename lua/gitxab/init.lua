@@ -1,19 +1,19 @@
 local M = {}
-local ipc = require('gitxab.ipc')
+local ipc = require("gitxab.ipc")
 
 -- プロジェクト一覧バッファを作成
 local function create_projects_buffer()
   -- 新しいバッファを作成
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
-  vim.api.nvim_buf_set_option(buf, 'swapfile', false)
-  vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-  vim.api.nvim_buf_set_option(buf, 'filetype', 'gitxab-projects')
+  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+  vim.api.nvim_buf_set_option(buf, "swapfile", false)
+  vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+  vim.api.nvim_buf_set_option(buf, "filetype", "gitxab-projects")
 
   -- バッファを開く
-  vim.api.nvim_command('vsplit')
+  vim.api.nvim_command("vsplit")
   vim.api.nvim_win_set_buf(0, buf)
-  
+
   return buf
 end
 
@@ -32,7 +32,7 @@ function M.list_projects()
   local ok = client:send({
     id = 1,
     method = "list_projects",
-    params = { q = "" }
+    params = { q = "" },
   })
 
   if not ok then
@@ -69,7 +69,7 @@ function M.setup(opts)
   M.config = opts
 
   -- GitXabProjects コマンドを登録
-  vim.api.nvim_create_user_command('GitXabProjects', function()
+  vim.api.nvim_create_user_command("GitXabProjects", function()
     M.list_projects()
   end, {})
 end

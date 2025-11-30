@@ -267,6 +267,56 @@ REST API v3とGitLab API v4の両方をサポートしています。
 **現状**:
 94テスト成功、1テストスキップ（Provider統合の複雑性によるバッファテスト）
 
+## コード品質チェック要件
+
+**すべての変更完了時に実行必須のチェックリスト**:
+
+1. **フォーマットチェック**
+   ```bash
+   deno fmt --check
+   ```
+   - 全TypeScript/JSON/Markdownファイルが正しくフォーマットされていること
+   - エラーがある場合は `deno fmt` で自動修正
+
+2. **Lintチェック**
+   ```bash
+   deno lint
+   ```
+   - 全TypeScriptファイルがlintルールに準拠していること
+   - 未使用変数は `_` プレフィックスでリネーム
+   - 必要な場合のみ `// deno-lint-ignore` コメント使用
+
+3. **Luaフォーマットチェック** (Luaファイル変更時)
+   ```bash
+   stylua --check lua/ plugin/
+   ```
+   - 全Luaファイルが正しくフォーマットされていること
+   - エラーがある場合は `stylua lua/ plugin/` で自動修正
+
+4. **型チェック**
+   ```bash
+   deno check denops/gitxab/main.ts deno-backend/mod.ts
+   ```
+   - TypeScriptの型エラーがないこと
+
+5. **全テスト実行**
+   ```bash
+   ./run_tests.sh all
+   ```
+   - Mock tests、Unit tests、Integration testsすべてが成功すること
+   - テスト失敗がある場合は修正してから完了とする
+
+**CI相当チェックの自動化**: 上記すべてのチェックは、GitHub Actions
+CIと同等の品質保証となります。
+変更をコミット・プッシュする前に必ず実行し、すべてパスすることを確認してください。
+
+**チェック実行タイミング**:
+
+- コード変更完了時（ユーザーへの報告前）
+- PR作成前
+- コミット前
+- 大規模なリファクタリング後
+
 ## 成功基準
 
 1. ✅ GitLab/GitHubのWeb UIで実行可能な主要な操作がVim上で実行可能

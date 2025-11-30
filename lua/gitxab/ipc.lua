@@ -1,14 +1,14 @@
 local uv = vim.loop
 local M = {}
 
-local default_socket = vim.fn.getenv('GITXAB_SOCKET_PATH') or '/tmp/gitxab.sock'
-local default_port = tonumber(vim.fn.getenv('GITXAB_PORT')) or 8765
+local default_socket = vim.fn.getenv("GITXAB_SOCKET_PATH") or "/tmp/gitxab.sock"
+local default_port = tonumber(vim.fn.getenv("GITXAB_PORT")) or 8765
 
 -- Attempt UDS first, then TCP
 function M.connect(opts)
   opts = opts or {}
   local socket_path = opts.socket_path or default_socket
-  local host = opts.host or '127.0.0.1'
+  local host = opts.host or "127.0.0.1"
   local port = opts.port or default_port
 
   local pipe = uv.new_pipe(false)
@@ -32,14 +32,16 @@ function M.connect(opts)
   end
 
   -- Try UDS
-  pcall(function() pipe:connect(socket_path, on_connect) end)
+  pcall(function()
+    pipe:connect(socket_path, on_connect)
+  end)
 
   return conn
 end
 
 -- send a single NDJSON request and wait for one-line response via TCP/UDS
 function M.request(conn, obj, callback)
-  local json = vim.fn.json_encode(obj) .. '\n'
+  local json = vim.fn.json_encode(obj) .. "\n"
   local writer
   if conn.tcp then
     writer = conn.tcp
@@ -64,14 +66,14 @@ function M.request(conn, obj, callback)
       end
     end)
   else
-    callback(nil, conn.error or 'no connection')
+    callback(nil, conn.error or "no connection")
   end
 end
 
 -- convenience
 function M.list_projects(conn, q, cb)
   local id = math.floor(math.random() * 100000)
-  M.request(conn, { id = id, method = 'list_projects', params = { q = q } }, cb)
+  M.request(conn, { id = id, method = "list_projects", params = { q = q } }, cb)
 end
 
 return M

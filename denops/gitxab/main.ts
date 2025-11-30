@@ -15,40 +15,35 @@ import * as mapping from "https://deno.land/x/denops_std@v6.0.1/mapping/mod.ts";
 
 // Multi-provider support
 import {
-  type Comment,
   createProvider,
   detectCurrentProvider,
-  type Issue as ProviderIssue,
   type Provider,
-  type PullRequest,
-  type Repository,
 } from "../../deno-backend/mod.ts";
 
 // Legacy GitLab API functions (gradual migration to Provider interface)
 import {
   addNoteToDiscussion as apiAddNoteToDiscussion,
   addNoteToMRDiscussion as apiAddNoteToMRDiscussion,
-  createIssue as apiCreateIssue,
   createIssueNote as apiCreateIssueNote,
-  type CreateIssueParams,
   createMergeRequest as apiCreateMergeRequest,
   createMRNote as apiCreateMRNote,
   getIssue as apiGetIssue,
   getIssueDiscussions as apiGetIssueDiscussions,
-  getIssueNotes as apiGetIssueNotes,
   getMergeRequest as apiGetMergeRequest,
   getMergeRequestChanges as apiGetMRChanges,
-  getMergeRequestDiffs as apiGetMRDiffs,
   getMergeRequestDiscussions as apiGetMRDiscussions,
   type Issue,
-  type IssueNote,
   listBranches as apiListBranches,
-  listIssues as apiListIssues,
   listMergeRequests as apiListMergeRequests,
   type Project,
   updateIssue as apiUpdateIssue,
   type UpdateIssueParams,
 } from "../../deno-backend/mod.ts";
+
+// Extended Project type with original repository ID for GitHub support
+interface ProjectWithRepoId extends Project {
+  _repoId?: string | number; // Preserve original ID format (GitHub: "owner/repo", GitLab: number)
+}
 
 // Global provider instance
 let providerInstance: Provider | null = null;
@@ -102,7 +97,7 @@ interface MergeRequest {
 }
 
 // Store project data for interactive navigation
-const projectDataMap = new Map<number, Project[]>();
+const projectDataMap = new Map<number, ProjectWithRepoId[]>();
 // Store issue data for interactive navigation
 const issueDataMap = new Map<number, Issue[]>();
 // Store merge request data for interactive navigation
@@ -282,14 +277,18 @@ export async function main(denops: Denops): Promise<void> {
      */
     async listProjects(query?: unknown): Promise<unknown> {
       try {
-        const q = typeof query === "string" ? query : undefined;
+        const _q = typeof query === "string" ? query : undefined;
 
         // Use unified Provider interface for all providers
         const provider = await getProvider(denops);
         const repositories = await provider.listRepositories();
 
-        // Convert Repository[] to Project[] for backward compatibility
-        const projects: Project[] = repositories.map((repo) => ({
+        // Store repositories for later use (preserve original ID format)
+        const _repoMap = new Map(repositories.map((r) => [r.name, r]));
+
+        // Convert Repository[] to ProjectWithRepoId[] for backward compatibility
+        // Note: For GitHub, use "owner/repo" format; for GitLab use numeric ID
+        const projects: ProjectWithRepoId[] = repositories.map((repo) => ({
           id: typeof repo.id === "number"
             ? repo.id
             : parseInt(repo.id, 10) || 0,
@@ -303,6 +302,9 @@ export async function main(denops: Denops): Promise<void> {
             path: repo.fullName.split("/")[0],
           },
           default_branch: repo.defaultBranch,
+          // For GitHub: use "owner/repo" format; for GitLab: use numeric ID
+          // Use provider name to determine correct format
+          _repoId: provider.name === "github" ? repo.fullName : repo.id,
         }));
 
         const providerName = provider.name === "github" ? "GitHub" : "GitLab";
@@ -316,7 +318,7 @@ export async function main(denops: Denops): Promise<void> {
         }
 
         // Find or create buffer for displaying projects
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-projects",
           "GitXab://projects",
@@ -407,7 +409,9 @@ export async function main(denops: Denops): Promise<void> {
 
         // Find project by matching line text (format: "name - description")
         const projectName = lineText.split(" - ")[0].trim();
-        const project = projects.find((p) => p.name === projectName);
+        const project = projects.find((p) => p.name === projectName) as
+          | ProjectWithRepoId
+          | undefined;
 
         if (!project) {
           return; // Not on a valid project line
@@ -425,18 +429,28 @@ export async function main(denops: Denops): Promise<void> {
 
         const choice = await denops.call("inputlist", choices) as number;
 
+        // Use original repository ID (handles both GitHub "owner/repo" and GitLab numeric ID)
+        const repoId = project._repoId || project.id;
+
+        // Debug: Log the project object and repoId
+        console.log(
+          "[GitXab Debug] Project:",
+          JSON.stringify(project, null, 2),
+        );
+        console.log("[GitXab Debug] repoId:", repoId, "type:", typeof repoId);
+
         if (choice === 1) {
           // View issues
-          await denops.dispatcher.listIssues(project.id);
+          await denops.dispatcher.listIssues(repoId);
         } else if (choice === 2) {
           // Create issue
-          await denops.dispatcher.createIssue(project.id);
+          await denops.dispatcher.createIssue(repoId);
         } else if (choice === 3) {
           // View merge requests
-          await denops.dispatcher.listMergeRequests(project.id);
+          await denops.dispatcher.listMergeRequests(repoId);
         } else if (choice === 4) {
           // Create merge request
-          await denops.dispatcher.createMergeRequest(project.id);
+          await denops.dispatcher.createMergeRequest(repoId);
         }
         // choice === 5 or 0 (ESC) - do nothing
       } catch (error) {
@@ -459,19 +473,61 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Project ID is required");
         }
 
-        const pid = typeof projectId === "string"
-          ? parseInt(projectId, 10)
-          : projectId;
-        if (isNaN(pid)) {
-          throw new Error("Invalid project ID");
-        }
+        const stateFilter = typeof state === "string" ? state : undefined;
 
-        const stateFilter =
-          (state === "opened" || state === "closed" || state === "all")
-            ? state
-            : undefined;
+        // Use unified Provider interface
+        const provider = await getProvider(denops);
 
-        const issues = await apiListIssues(pid, stateFilter);
+        // Debug: Log provider and projectId
+        console.log("[GitXab Debug] listIssues - Provider:", provider.name);
+        console.log(
+          "[GitXab Debug] listIssues - projectId:",
+          projectId,
+          "type:",
+          typeof projectId,
+        );
+
+        const providerIssues = await provider.listIssues(
+          projectId,
+          stateFilter,
+        );
+
+        // Convert to legacy Issue format for compatibility
+        const issues = providerIssues.map((issue): Issue => ({
+          id: typeof issue.id === "string"
+            ? parseInt(issue.id, 10) || 0
+            : issue.id,
+          iid: issue.number,
+          project_id: typeof projectId === "number" ? projectId : 0,
+          title: issue.title,
+          description: issue.body || "",
+          state: issue.state === "open" ? "opened" : "closed",
+          created_at: issue.createdAt,
+          updated_at: issue.updatedAt,
+          author: {
+            id: typeof issue.author.id === "string"
+              ? parseInt(issue.author.id, 10) || 0
+              : issue.author.id,
+            name: issue.author.name,
+            username: issue.author.username,
+          },
+          assignee: issue.assignees?.[0]
+            ? {
+              id: typeof issue.assignees[0].id === "string"
+                ? parseInt(issue.assignees[0].id, 10) || 0
+                : issue.assignees[0].id,
+              name: issue.assignees[0].name,
+              username: issue.assignees[0].username,
+            }
+            : undefined,
+          assignees: issue.assignees?.map((a) => ({
+            id: typeof a.id === "string" ? parseInt(a.id, 10) || 0 : a.id,
+            name: a.name,
+            username: a.username,
+          })) || [],
+          labels: issue.labels,
+          web_url: issue.url,
+        }));
 
         if (!Array.isArray(issues)) {
           throw new Error("API returned unexpected format for issues");
@@ -485,18 +541,20 @@ export async function main(denops: Denops): Promise<void> {
         }
 
         // Find or create buffer for displaying issues
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-issues",
-          `GitXab://project/${pid}/issues`,
+          `GitXab://project/${projectId}/issues`,
         );
 
         // Store issue data for this buffer
         issueDataMap.set(bufnr, issues);
 
+        const providerName = provider.name === "github" ? "GitHub" : "GitLab";
+
         // Format issues for display
         const lines: string[] = [
-          `GitLab Issues - Project #${pid}`,
+          `${providerName} Issues - ${projectId}`,
           "=".repeat(80),
           "Keys: <Enter>=Detail  n=New  r=Refresh  q=Close  ?=Help",
           "=".repeat(80),
@@ -554,10 +612,13 @@ export async function main(denops: Denops): Promise<void> {
         await vars.b.set(denops, "filetype", "gitxab-issues");
 
         // Set up key mappings
+        // Use JSON.stringify for projectId to handle both string and number
+        const projectIdStr = JSON.stringify(projectId);
+
         await mapping.map(
           denops,
           "<CR>",
-          `<Cmd>call denops#request('${denops.name}', 'openIssueDetail', [bufnr('%'), ${pid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'openIssueDetail', [bufnr('%'), ${projectIdStr}])<CR>`,
           { mode: "n", buffer: true },
         );
         await mapping.map(
@@ -569,7 +630,7 @@ export async function main(denops: Denops): Promise<void> {
         await mapping.map(
           denops,
           "r",
-          `<Cmd>call denops#request('${denops.name}', 'listIssues', [${pid}, '${
+          `<Cmd>call denops#request('${denops.name}', 'listIssues', [${projectIdStr}, '${
             stateFilter || ""
           }'])<CR>`,
           { mode: "n", buffer: true },
@@ -577,7 +638,7 @@ export async function main(denops: Denops): Promise<void> {
         await mapping.map(
           denops,
           "n",
-          `<Cmd>call denops#request('${denops.name}', 'createIssue', [${pid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'createIssue', [${projectIdStr}])<CR>`,
           { mode: "n", buffer: true },
         );
         await mapping.map(
@@ -608,13 +669,6 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Project ID is required");
         }
 
-        const pid = typeof projectId === "string"
-          ? parseInt(projectId, 10)
-          : projectId;
-        if (isNaN(pid)) {
-          throw new Error("Invalid project ID");
-        }
-
         // Prompt for issue title
         const title = await denops.call("input", "Issue title: ") as string;
         if (!title || title.trim() === "") {
@@ -637,31 +691,30 @@ export async function main(denops: Denops): Promise<void> {
         ) as string;
 
         // Build issue params
-        const params: CreateIssueParams = {
+        const params = {
           title: title.trim(),
+          body: description && description.trim()
+            ? description.trim()
+            : undefined,
+          labels: labelsInput && labelsInput.trim()
+            ? labelsInput.trim().split(",").map((l) => l.trim())
+            : undefined,
         };
 
-        if (description && description.trim()) {
-          params.description = description.trim();
-        }
-
-        if (labelsInput && labelsInput.trim()) {
-          params.labels = labelsInput.trim();
-        }
-
-        // Create the issue
+        // Create the issue using unified Provider interface
         await denops.cmd('echo "Creating issue..."');
-        const issue = await apiCreateIssue(pid, params);
+        const provider = await getProvider(denops);
+        const issue = await provider.createIssue(projectId, params);
 
         // Show success message
         await denops.cmd(
-          `echohl MoreMsg | echo "✓ Issue #${issue.iid} created successfully" | echohl None`,
+          `echohl MoreMsg | echo "✓ Issue #${issue.number} created successfully" | echohl None`,
         );
 
         // Optionally refresh issue list if we're in an issue buffer
         const filetype = await vars.b.get(denops, "filetype");
         if (filetype === "gitxab-issues") {
-          await denops.dispatcher.listIssues(pid);
+          await denops.dispatcher.listIssues(projectId);
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -739,7 +792,7 @@ export async function main(denops: Denops): Promise<void> {
         ]);
 
         // Find or create buffer for displaying issue details
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-issue",
           `GitXab://project/${pid}/issue/${iid}`,
@@ -1542,7 +1595,7 @@ export async function main(denops: Denops): Promise<void> {
         await denops.cmd(`augroup GitXabReply`);
         await denops.cmd(`autocmd! * ${escapedPath}`);
         await denops.cmd(`augroup END`);
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
     },
@@ -1576,7 +1629,7 @@ export async function main(denops: Denops): Promise<void> {
         if (debug) {
           await denops.cmd(`echo "[GitXab Debug] Cleaned up autocmds"`);
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
     },
@@ -1852,7 +1905,7 @@ export async function main(denops: Denops): Promise<void> {
         }
 
         // Find or create buffer for displaying MRs
-        const { bufnr, isNew } = await findOrCreateBuffer(
+        const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-mrs",
           `GitXab://project/${pid}/merge-requests`,
@@ -2456,6 +2509,7 @@ export async function main(denops: Denops): Promise<void> {
 
         // Fetch MR changes (includes diff information)
         await denops.cmd('echo "Fetching diffs..."');
+        // deno-lint-ignore no-explicit-any
         const mrChanges = await apiGetMRChanges(projectId, mrIid) as any;
 
         if (!mrChanges || !mrChanges.changes) {

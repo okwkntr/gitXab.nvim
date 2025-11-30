@@ -113,6 +113,7 @@ export function extractUsername(user: unknown): string {
  * @param providerUser - Provider-specific user object
  * @returns Normalized User object
  */
+// deno-lint-ignore no-explicit-any
 export function createCommonUser(providerUser: any): User {
   return {
     id: providerUser.id,
@@ -129,6 +130,7 @@ export function createCommonUser(providerUser: any): User {
  * @param labels - Labels in various formats (array of strings or objects)
  * @returns Array of label names
  */
+// deno-lint-ignore no-explicit-any
 export function extractLabels(labels: any[] | undefined): string[] {
   if (!labels || !Array.isArray(labels)) return [];
 
@@ -152,26 +154,31 @@ export abstract class BaseConverter {
   /**
    * Convert provider-specific repository to common format
    */
+  // deno-lint-ignore no-explicit-any
   abstract convertRepository(repo: any): Repository;
 
   /**
    * Convert provider-specific issue to common format
    */
+  // deno-lint-ignore no-explicit-any
   abstract convertIssue(issue: any): Issue;
 
   /**
    * Convert provider-specific pull request to common format
    */
+  // deno-lint-ignore no-explicit-any
   abstract convertPullRequest(pr: any): PullRequest;
 
   /**
    * Convert provider-specific comment to common format
    */
+  // deno-lint-ignore no-explicit-any
   abstract convertComment(comment: any): Comment;
 
   /**
    * Convert provider-specific branch to common format
    */
+  // deno-lint-ignore no-explicit-any
   abstract convertBranch(branch: any): Branch;
 }
 

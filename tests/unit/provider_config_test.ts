@@ -12,7 +12,6 @@ import {
   detectProviderFromUrl,
   extractOwnerAndRepo,
   parseRepositoryId,
-  type ProviderType,
 } from "../../deno-backend/src/config/provider_config.ts";
 import {
   createAuthHeaders,

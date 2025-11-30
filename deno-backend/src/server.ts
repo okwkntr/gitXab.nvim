@@ -55,7 +55,7 @@ async function writeNdjson(writer: Deno.Writer & Deno.Closer, obj: unknown) {
 async function handleConn(conn: Deno.Conn) {
   try {
     const bufReader = conn.readable.getReader();
-    const buf = new Uint8Array(4096);
+    const _buf = new Uint8Array(4096);
     let partial = "";
     while (true) {
       const { value, done } = await bufReader.read();
@@ -70,7 +70,7 @@ async function handleConn(conn: Deno.Conn) {
         let msg;
         try {
           msg = JSON.parse(line);
-        } catch (e) {
+        } catch (_e) {
           await writeNdjson(conn, {
             id: null,
             error: { code: 1000, message: "invalid json" },
@@ -97,7 +97,9 @@ async function handleConn(conn: Deno.Conn) {
   } finally {
     try {
       conn.close();
-    } catch {}
+    } catch {
+      // Ignore connection close errors
+    }
   }
 }
 
@@ -106,7 +108,9 @@ try {
   // remove stale socket
   try {
     await Deno.remove(IPC_SOCKET_PATH);
-  } catch {}
+  } catch {
+    // Ignore if socket file doesn't exist
+  }
   // UDS is only available on unix-like platforms
   const udsListener = Deno.listen({ transport: "unix", path: IPC_SOCKET_PATH });
   (async () => {
