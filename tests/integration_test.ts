@@ -295,7 +295,7 @@ Deno.test({
 
     const { main } = await import("../denops/gitxab/main.ts");
     // deno-lint-ignore no-explicit-any
-  await main(denops as any);
+    await main(denops as any);
 
     // Set mock environment for provider initialization
     Deno.env.set("GITHUB_TOKEN", "test_token");
