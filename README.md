@@ -96,7 +96,7 @@ return {
     lazy = false,
   },
   {
-    'your-org/gitxab.vim',
+    'okwkntr/gitxab.nvim',
     dependencies = { 'vim-denops/denops.vim' },
     config = function()
       -- Provider is auto-detected from git remote
@@ -112,8 +112,6 @@ return {
       -- vim.env.GITHUB_BASE_URL = 'https://github.example.com/api/v3'
       -- vim.env.GITLAB_BASE_URL = 'https://gitlab.example.com/api/v4'
     end,
-    -- Load on command for faster startup
-    cmd = { 'GitXabProjects', 'GitXabIssues', 'GitXabMRs', 'GitXabCreateIssue', 'GitXabCreateMR' },
   },
 }
 ```
