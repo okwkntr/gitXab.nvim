@@ -25,16 +25,10 @@ import {
   addNoteToDiscussion as apiAddNoteToDiscussion,
   addNoteToMRDiscussion as apiAddNoteToMRDiscussion,
   createIssueNote as apiCreateIssueNote,
-  createMergeRequest as apiCreateMergeRequest,
   createMRNote as apiCreateMRNote,
   getIssue as apiGetIssue,
   getIssueDiscussions as apiGetIssueDiscussions,
-  getMergeRequest as apiGetMergeRequest,
-  getMergeRequestChanges as apiGetMRChanges,
-  getMergeRequestDiscussions as apiGetMRDiscussions,
   type Issue,
-  listBranches as apiListBranches,
-  listMergeRequests as apiListMergeRequests,
   type Project,
   updateIssue as apiUpdateIssue,
   type UpdateIssueParams,
@@ -72,11 +66,11 @@ interface Discussion {
   notes: DiscussionNote[];
 }
 
-// MergeRequest type definition
+// MergeRequest type definition (supports both GitHub and GitLab)
 interface MergeRequest {
-  id: number;
+  id: string | number; // GitHub: string, GitLab: number
   iid: number;
-  project_id: number;
+  project_id: string | number; // GitHub: "owner/repo", GitLab: numeric
   title: string;
   description: string | null;
   state: string;
@@ -85,11 +79,11 @@ interface MergeRequest {
   merged_at: string | null;
   closed_at: string | null;
   author: {
-    id: number;
+    id: string | number;
     username: string;
     name: string;
   };
-  assignees?: Array<{ id: number; username: string; name: string }>;
+  assignees?: Array<{ id: string | number; username: string; name: string }>;
   source_branch: string;
   target_branch: string;
   web_url: string;
@@ -1875,8 +1869,8 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * List merge requests
-     * @param projectId - GitLab project ID
+     * List merge requests/pull requests
+     * @param projectId - Project ID (GitHub: "owner/repo", GitLab: numeric)
      */
     async listMergeRequests(projectId: unknown): Promise<unknown> {
       try {
@@ -1884,47 +1878,79 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Project ID is required");
         }
 
-        const pid = typeof projectId === "string"
-          ? parseInt(projectId, 10)
-          : projectId;
-        if (isNaN(pid)) {
-          throw new Error("Invalid project ID");
+        // Use unified Provider interface
+        const provider = await getProvider(denops);
+        const prs = await provider.listPullRequests(projectId, "all");
+
+        if (!Array.isArray(prs)) {
+          throw new Error(
+            "API returned unexpected format for merge requests/pull requests",
+          );
         }
 
-        const mrs = await apiListMergeRequests(pid);
-
-        if (!Array.isArray(mrs)) {
-          throw new Error("API returned unexpected format for merge requests");
-        }
-
-        if (mrs.length === 0) {
+        if (prs.length === 0) {
           await denops.cmd(
-            'echohl WarningMsg | echo "No merge requests found" | echohl None',
+            'echohl WarningMsg | echo "No merge requests/pull requests found" | echohl None',
           );
           return [];
         }
 
-        // Find or create buffer for displaying MRs
+        // Convert unified PullRequest to legacy MergeRequest format for backward compatibility
+        const mrs = prs.map((pr) => ({
+          id: pr.id,
+          iid: pr.number,
+          project_id: projectId,
+          title: pr.title,
+          description: pr.body,
+          state: pr.state,
+          created_at: pr.createdAt,
+          updated_at: pr.updatedAt,
+          merged_at: pr.mergedAt,
+          closed_at: pr.state === "closed" || pr.state === "merged"
+            ? pr.mergedAt || pr.updatedAt
+            : null,
+          author: {
+            id: pr.author.id,
+            username: pr.author.username,
+            name: pr.author.name,
+          },
+          assignees: pr.assignees?.map((a) => ({
+            id: a.id,
+            username: a.username,
+            name: a.name,
+          })),
+          source_branch: pr.sourceBranch,
+          target_branch: pr.targetBranch,
+          web_url: pr.url,
+          labels: [] as string[], // Labels will be added when available in PR details
+        }));
+
+        // Find or create buffer for displaying MRs/PRs
         const { bufnr, isNew: _isNew } = await findOrCreateBuffer(
           denops,
           "gitxab-mrs",
-          `GitXab://project/${pid}/merge-requests`,
+          `GitXab://project/${projectId}/merge-requests`,
         );
 
-        // Store MR data for this buffer
+        // Store MR data for this buffer (with projectId for later reference)
         mrDataMap.set(bufnr, mrs);
 
-        // Format MRs for display
+        // Format MRs/PRs for display
+        const prTerm = provider.name === "github"
+          ? "Pull Requests"
+          : "Merge Requests";
         const lines: string[] = [
-          `GitLab Merge Requests - Project #${pid}`,
+          `${
+            provider.name === "github" ? "GitHub" : "GitLab"
+          } ${prTerm} - ${projectId}`,
           "=".repeat(80),
           "",
-          `Total: ${mrs.length} merge requests`,
+          `Total: ${mrs.length} ${prTerm.toLowerCase()}`,
           "",
         ];
 
         for (const mr of mrs) {
-          const stateIcon = mr.state === "opened"
+          const stateIcon = mr.state === "open"
             ? "🟢"
             : mr.state === "merged"
             ? "🟣"
@@ -1933,11 +1959,7 @@ export async function main(denops: Denops): Promise<void> {
             ? ` [${mr.labels.join(", ")}]`
             : "";
           const assignees = mr.assignees && mr.assignees.length > 0
-            ? ` @${
-              mr.assignees.map((a: { username: string }) => a.username).join(
-                ", @",
-              )
-            }`
+            ? ` @${mr.assignees.map((a) => a.username).join(", @")}`
             : "";
           const date = new Date(mr.created_at).toLocaleDateString();
 
@@ -1948,9 +1970,12 @@ export async function main(denops: Denops): Promise<void> {
           );
         }
 
+        const createKey = provider.name === "github"
+          ? "Create PR"
+          : "Create MR";
         lines.push(
           "",
-          "Keys: <Enter>=View  n=Create MR  r=Refresh  q=Close  ?=Help",
+          `Keys: <Enter>=View  n=${createKey}  r=Refresh  q=Close  ?=Help`,
         );
 
         // Set buffer content
@@ -1960,7 +1985,7 @@ export async function main(denops: Denops): Promise<void> {
         await fn.setbufvar(denops, bufnr, "&filetype", "gitxab-mrs");
         await fn.setbufvar(denops, bufnr, "&buftype", "nofile");
         await fn.setbufvar(denops, bufnr, "&modifiable", 0);
-        await fn.setbufvar(denops, bufnr, "gitxab_project_id", pid);
+        await fn.setbufvar(denops, bufnr, "gitxab_project_id", projectId);
 
         // Switch to buffer
         await denops.cmd(`buffer ${bufnr}`);
@@ -1975,13 +2000,17 @@ export async function main(denops: Denops): Promise<void> {
         await mapping.map(
           denops,
           "n",
-          `<Cmd>call denops#request('${denops.name}', 'createMergeRequest', [${pid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'createMergeRequest', [${
+            JSON.stringify(projectId)
+          }])<CR>`,
           { buffer: true, silent: true, noremap: true },
         );
         await mapping.map(
           denops,
           "r",
-          `<Cmd>call denops#request('${denops.name}', 'listMergeRequests', [${pid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'listMergeRequests', [${
+            JSON.stringify(projectId)
+          }])<CR>`,
           { buffer: true, silent: true, noremap: true },
         );
         await mapping.map(
@@ -2009,8 +2038,8 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * Open MR detail from MR list buffer
-     * @param bufnr - Buffer number of MR list
+     * Open MR/PR detail from MR/PR list buffer
+     * @param bufnr - Buffer number of MR/PR list
      */
     async openMRFromList(bufnr: unknown): Promise<void> {
       try {
@@ -2018,22 +2047,39 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Invalid buffer number");
         }
 
-        // Get current line text to extract MR IID
+        // Get current line text to extract MR/PR number
         const line = await fn.line(denops, ".") as number;
         const lineText = await fn.getline(denops, line) as string;
 
-        // Get MR data for this buffer
+        // Get MR/PR data for this buffer
         const mrs = mrDataMap.get(bufnr);
         if (!mrs) {
-          await denops.call("nvim_err_writeln", "GitXab: No MR data found");
+          await denops.call(
+            "nvim_err_writeln",
+            "GitXab: No MR/PR data found",
+          );
           return;
         }
 
-        // Parse MR IID from line (format: "🟢 !123 Title..." or any emoji + !number)
+        // Get project ID from buffer variable
+        const projectId = await fn.getbufvar(
+          denops,
+          bufnr,
+          "gitxab_project_id",
+        );
+        if (!projectId) {
+          await denops.call(
+            "nvim_err_writeln",
+            "GitXab: Project ID not found",
+          );
+          return;
+        }
+
+        // Parse MR/PR number from line (format: "🟢 !123 Title..." or any emoji + !number)
         // More flexible pattern to handle Unicode properly
         const match = lineText.match(/!\s*(\d+)\s+/);
         if (!match) {
-          // Not on a valid MR line (empty line, header, etc.)
+          // Not on a valid MR/PR line (empty line, header, etc.)
           return;
         }
 
@@ -2043,13 +2089,13 @@ export async function main(denops: Denops): Promise<void> {
         if (!mr) {
           await denops.call(
             "nvim_err_writeln",
-            `GitXab: MR !${mrIid} not found in list`,
+            `GitXab: MR/PR !${mrIid} not found in list`,
           );
           return;
         }
 
-        // View MR detail
-        await denops.dispatcher.viewMergeRequest(mr.project_id, mrIid);
+        // View MR/PR detail
+        await denops.dispatcher.viewMergeRequest(projectId, mrIid);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await denops.call(
@@ -2060,21 +2106,79 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * View merge request detail with discussions
-     * @param projectId - GitLab project ID
-     * @param mrIid - Merge Request IID
+     * View merge request/pull request detail with discussions
+     * @param projectId - Project ID (GitHub: "owner/repo", GitLab: numeric)
+     * @param mrIid - MR/PR number
      */
     async viewMergeRequest(projectId: unknown, mrIid: unknown): Promise<void> {
       try {
-        if (typeof projectId !== "number" || typeof mrIid !== "number") {
+        if (
+          (typeof projectId !== "number" && typeof projectId !== "string") ||
+          typeof mrIid !== "number"
+        ) {
           throw new Error("Invalid project ID or MR IID");
         }
 
-        // Fetch MR detail and discussions
-        const [mr, discussions] = await Promise.all([
-          apiGetMergeRequest(projectId, mrIid),
-          apiGetMRDiscussions(projectId, mrIid),
+        // Use unified Provider interface
+        const provider = await getProvider(denops);
+        const [pr, comments] = await Promise.all([
+          provider.getPullRequest(projectId, mrIid),
+          provider.getComments(projectId, mrIid),
         ]);
+
+        // Convert to legacy format for backward compatibility
+        const mr = {
+          id: pr.id,
+          iid: pr.number,
+          project_id: projectId,
+          title: pr.title,
+          description: pr.body,
+          state: pr.state,
+          created_at: pr.createdAt,
+          updated_at: pr.updatedAt,
+          merged_at: pr.mergedAt,
+          closed_at: pr.state === "closed" || pr.state === "merged"
+            ? pr.mergedAt || pr.updatedAt
+            : null,
+          author: {
+            id: pr.author.id,
+            username: pr.author.username,
+            name: pr.author.name,
+          },
+          assignees: pr.assignees?.map((a) => ({
+            id: a.id,
+            username: a.username,
+            name: a.name,
+          })),
+          source_branch: pr.sourceBranch,
+          target_branch: pr.targetBranch,
+          web_url: pr.url,
+          labels: [] as string[], // Labels will be added when available in PR details
+        };
+
+        // Convert comments to legacy discussion format
+        const discussions = [{
+          id: "comments",
+          individual_note: true,
+          notes: comments.map((c) => ({
+            id: c.id,
+            type: null,
+            body: c.body,
+            author: {
+              id: c.author.id,
+              username: c.author.username,
+              name: c.author.name,
+            },
+            created_at: c.createdAt,
+            updated_at: c.updatedAt,
+            system: false,
+            noteable_id: pr.id,
+            noteable_type: provider.name === "github"
+              ? "PullRequest"
+              : "MergeRequest",
+            noteable_iid: pr.number,
+          })),
+        }];
 
         if (!mr) {
           throw new Error("Merge request not found");
@@ -2170,29 +2274,37 @@ export async function main(denops: Denops): Promise<void> {
         // Switch to buffer
         await denops.cmd(`buffer ${bufnr}`);
 
-        // Set up key mappings
+        // Set up key mappings (use JSON.stringify for proper string escaping)
         await mapping.map(
           denops,
           "d",
-          `<Cmd>call denops#request('${denops.name}', 'viewMRDiffs', [${projectId}, ${mrIid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'viewMRDiffs', [${
+            JSON.stringify(projectId)
+          }, ${mrIid}])<CR>`,
           { buffer: true, silent: true, noremap: true },
         );
         await mapping.map(
           denops,
           "c",
-          `<Cmd>call denops#request('${denops.name}', 'commentOnMR', [${projectId}, ${mrIid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'commentOnMR', [${
+            JSON.stringify(projectId)
+          }, ${mrIid}])<CR>`,
           { buffer: true, silent: true, noremap: true },
         );
         await mapping.map(
           denops,
           "R",
-          `<Cmd>call denops#request('${denops.name}', 'replyToMRComment', [${projectId}, ${mrIid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'replyToMRComment', [${
+            JSON.stringify(projectId)
+          }, ${mrIid}])<CR>`,
           { buffer: true, silent: true, noremap: true },
         );
         await mapping.map(
           denops,
           "r",
-          `<Cmd>call denops#request('${denops.name}', 'viewMergeRequest', [${projectId}, ${mrIid}])<CR>`,
+          `<Cmd>call denops#request('${denops.name}', 'viewMergeRequest', [${
+            JSON.stringify(projectId)
+          }, ${mrIid}])<CR>`,
           { buffer: true, silent: true, noremap: true },
         );
         await mapping.map(
@@ -2217,13 +2329,16 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * Add comment to merge request
-     * @param projectId - GitLab project ID
-     * @param mrIid - MR IID
+     * Add comment to merge request/pull request
+     * @param projectId - Project ID (GitHub: "owner/repo", GitLab: numeric)
+     * @param mrIid - MR/PR number
      */
     async commentOnMR(projectId: unknown, mrIid: unknown): Promise<void> {
       try {
-        if (typeof projectId !== "number" || typeof mrIid !== "number") {
+        if (
+          (typeof projectId !== "number" && typeof projectId !== "string") ||
+          typeof mrIid !== "number"
+        ) {
           throw new Error("Invalid project ID or MR IID");
         }
 
@@ -2293,13 +2408,16 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * Reply to MR discussion thread
-     * @param projectId - GitLab project ID
-     * @param mrIid - MR IID
+     * Reply to MR/PR discussion thread
+     * @param projectId - Project ID (GitHub: "owner/repo", GitLab: numeric)
+     * @param mrIid - MR/PR number
      */
     async replyToMRComment(projectId: unknown, mrIid: unknown): Promise<void> {
       try {
-        if (typeof projectId !== "number" || typeof mrIid !== "number") {
+        if (
+          (typeof projectId !== "number" && typeof projectId !== "string") ||
+          typeof mrIid !== "number"
+        ) {
           throw new Error("Invalid project ID or MR IID");
         }
 
@@ -2497,20 +2615,39 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * View merge request diffs
-     * @param projectId - GitLab project ID
-     * @param mrIid - MR IID
+     * View merge request/pull request diffs
+     * @param projectId - Project ID (GitHub: "owner/repo", GitLab: numeric)
+     * @param mrIid - MR/PR number
      */
     async viewMRDiffs(projectId: unknown, mrIid: unknown): Promise<void> {
       try {
-        if (typeof projectId !== "number" || typeof mrIid !== "number") {
+        if (
+          (typeof projectId !== "number" && typeof projectId !== "string") ||
+          typeof mrIid !== "number"
+        ) {
           throw new Error("Invalid project ID or MR IID");
         }
 
-        // Fetch MR changes (includes diff information)
+        // Fetch MR/PR changes using Provider interface
         await denops.cmd('echo "Fetching diffs..."');
+        const provider = await getProvider(denops);
+        const prDiff = await provider.getPullRequestDiff(projectId, mrIid);
+
+        // Convert to legacy format
         // deno-lint-ignore no-explicit-any
-        const mrChanges = await apiGetMRChanges(projectId, mrIid) as any;
+        const mrChanges: any = {
+          title: `PR/MR #${mrIid}`,
+          source_branch: "source",
+          target_branch: "target",
+          changes: prDiff.files.map((f) => ({
+            old_path: f.oldPath,
+            new_path: f.newPath,
+            diff: f.diff,
+            new_file: f.isNew,
+            deleted_file: f.isDeleted,
+            renamed_file: f.isRenamed,
+          })),
+        };
 
         if (!mrChanges || !mrChanges.changes) {
           throw new Error("No diff data available");
@@ -2627,8 +2764,8 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * Create new merge request
-     * @param projectId - GitLab project ID
+     * Create new merge request/pull request
+     * @param projectId - Project ID (GitHub: "owner/repo", GitLab: numeric)
      */
     async createMergeRequest(projectId: unknown): Promise<void> {
       try {
@@ -2636,14 +2773,13 @@ export async function main(denops: Denops): Promise<void> {
           throw new Error("Project ID is required");
         }
 
-        const pid = typeof projectId === "string"
-          ? parseInt(projectId, 10)
-          : projectId;
-        if (isNaN(pid)) {
-          throw new Error("Invalid project ID");
-        }
+        // For GitHub, projectId is "owner/repo" string
+        // For GitLab, projectId is numeric
+        const pid = projectId;
 
         // Create temporary file for MR creation form
+        // Sanitize projectId for filename (replace / with _)
+        const safeId = typeof pid === "string" ? pid.replace(/\//g, "_") : pid;
         let tmpDir = await denops.call("expand", "$TMPDIR") as string;
         if (!tmpDir || tmpDir === "$TMPDIR") {
           tmpDir = await denops.call("expand", "$TEMP") as string;
@@ -2652,21 +2788,23 @@ export async function main(denops: Denops): Promise<void> {
           const tempPath = await fn.tempname(denops) as string;
           tmpDir = await denops.call("fnamemodify", tempPath, ":h") as string;
         }
-        const tmpFile = `${tmpDir}/.gitxab_${pid}_create_mr.md`;
+        const tmpFile = `${tmpDir}/.gitxab_${safeId}_create_mr.md`;
 
-        // Fetch branches from GitLab
+        // Fetch branches using Provider interface
         await denops.cmd('echo "Fetching branches..."');
         let branches: Array<{ name: string; default?: boolean }> = [];
         let defaultBranch = "main";
 
         try {
-          const branchData = await apiListBranches(pid);
+          const provider = await getProvider(denops);
+          const branchData = await provider.listBranches(pid);
           if (Array.isArray(branchData)) {
-            branches = branchData;
+            branches = branchData.map((b) => ({
+              name: b.name,
+              default: b.default,
+            }));
             // Find default branch
-            const defBranch = branches.find((b: { default?: boolean }) =>
-              b.default
-            );
+            const defBranch = branches.find((b) => b.default);
             if (defBranch) {
               defaultBranch = defBranch.name;
             }
@@ -2770,7 +2908,7 @@ export async function main(denops: Denops): Promise<void> {
     },
 
     /**
-     * Handle MR creation buffer save event
+     * Handle MR/PR creation buffer save event
      */
     async onCreateMRBufferSave(bufnrParam: unknown): Promise<void> {
       try {
@@ -2780,7 +2918,7 @@ export async function main(denops: Denops): Promise<void> {
         const projectId = await vars.b.get(
           denops,
           "gitxab_project_id",
-        ) as number;
+        ) as string | number;
 
         // Get buffer content
         const lines = await fn.getbufline(denops, bufnr, 1, "$") as string[];
@@ -2880,19 +3018,29 @@ export async function main(denops: Denops): Promise<void> {
           params.remove_source_branch = false;
         }
 
-        // Create the merge request
-        await denops.cmd('echo "Creating merge request..."');
-        const mr = await apiCreateMergeRequest(projectId, params);
+        // Create the merge request/pull request using Provider interface
+        await denops.cmd('echo "Creating merge request/pull request..."');
+        const provider = await getProvider(denops);
+        const pr = await provider.createPullRequest(projectId, {
+          title: params.title,
+          body: params.description,
+          sourceBranch: params.source_branch,
+          targetBranch: params.target_branch,
+          draft: false,
+        });
 
         // Close the form buffer
         await denops.cmd("bwipeout!");
 
         // Show success message
+        const prTerm = provider.name === "github"
+          ? "Pull Request"
+          : "Merge Request";
         await denops.cmd(
-          `echohl MoreMsg | echo "✓ Merge Request !${mr.iid} created successfully" | echohl None`,
+          `echohl MoreMsg | echo "✓ ${prTerm} !${pr.number} created successfully" | echohl None`,
         );
 
-        // Refresh MR list if we're in an MR buffer
+        // Refresh MR/PR list if we're in an MR buffer
         const prevBufnr = await fn.bufnr(denops, "#");
         const filetype = await fn.getbufvar(
           denops,

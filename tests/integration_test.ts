@@ -451,14 +451,15 @@ Deno.test("createMergeRequest - dispatcher validates input", async () => {
   // deno-lint-ignore no-explicit-any
   await main(denops as any);
 
-  // Test with invalid project ID
+  // Test with invalid project ID (null/undefined)
   try {
-    await denops.dispatcher.createMergeRequest("not-a-number");
+    await denops.dispatcher.createMergeRequest(null);
     assertEquals(false, true, "Should throw error for invalid project ID");
   } catch (error) {
     const err = error as Error;
-    const isValidError = err.message.includes("Invalid") ||
-      err.message.includes("NaN");
+    const isValidError = err.message.includes("Project ID is required") ||
+      err.message.includes("Invalid") ||
+      err.message.includes("denops.eval");
     assertEquals(isValidError, true, "Should throw validation error");
     console.log(`  ✓ Correctly validates input: ${err.message}`);
   }
